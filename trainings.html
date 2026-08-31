@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Treinos — Meu Tênis{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Treinos</h1></div>
+
+<section class="card form-card">
+  <form method="post" class="form-grid">
+    <div class="field"><label>Data</label><input type="date" name="date" value="{{ today }}"></div>
+    <div class="field"><label>Duração (min)</label><input type="number" name="duration_min" value="60" min="10" step="5"></div>
+    <div class="field"><label>Foco</label>
+      <select name="focus"><option>Técnico</option><option>Físico</option><option>Tático</option><option>Saque</option><option>Jogo-treino</option><option>Aula</option></select>
+    </div>
+    <div class="field"><label>Intensidade</label>
+      <select name="intensity"><option value="1">1 · leve</option><option value="2">2</option><option value="3" selected>3 · média</option><option value="4">4</option><option value="5">5 · forte</option></select>
+    </div>
+    <div class="field wide"><label>Notas</label><input type="text" name="notes" placeholder="O que treinou, sensações, pontos a melhorar..."></div>
+    <div class="field submit"><button type="submit">Registrar treino</button></div>
+  </form>
+</section>
+
+<section class="card">
+  {% if trainings %}
+  <table class="table">
+    <thead><tr><th>Data</th><th>Duração</th><th>Foco</th><th>Intensidade</th><th>Notas</th><th></th></tr></thead>
+    <tbody>
+      {% for t in trainings %}
+      <tr>
+        <td>{{ t.date.strftime('%d/%m/%y') }}</td>
+        <td>{{ t.duration_min }} min</td>
+        <td>{{ t.focus or '—' }}</td>
+        <td>{{ t.intensity }}/5</td>
+        <td class="notes-cell">{{ t.notes or '—' }}</td>
+        <td class="right">
+          <form method="post" action="{{ url_for('delete_training', tid=t.id) }}" onsubmit="return confirm('Apagar este treino?')">
+            <button class="link-danger">apagar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state">Nenhum treino registrado ainda.</div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: meu-tenis
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true          # o Render gera sozinho
+      - key: APP_PASSWORD
+        sync: false                  # você define no painel (sua senha de acesso)
+      - key: CAPTURE_TOKEN
+        sync: false                  # token da captura automática (invente um texto qualquer)
+      - key: DATABASE_URL
+        sync: false                  # string de conexão do banco Neon (ver README)
+      - key: ITF_PROFILE_URL
+        sync: false                  # link do seu perfil ITF (deixe vazio por enquanto)

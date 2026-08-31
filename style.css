@@ -1,0 +1,146 @@
+:root{
+  --court:#10243B;      /* azul quadra dura */
+  --court-2:#0B1A2E;
+  --ball:#C6F24E;       /* verde bola de tênis — sinal */
+  --paper:#EDF1F0;      /* branco frio de quadra */
+  --card:#FFFFFF;
+  --line:#DBE2E0;       /* linha de quadra */
+  --ink:#10243B;
+  --muted:#5E6E74;
+  --win:#1F8A4C;
+  --loss:#E4572E;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Inter",system-ui,sans-serif;
+  background:var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+
+/* ---------- Login ---------- */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;
+  background:radial-gradient(120% 120% at 80% -10%, #16324f 0%, var(--court) 45%, var(--court-2) 100%);}
+.login-card{background:var(--card);border-radius:20px;padding:40px 36px;max-width:400px;width:100%;
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.5);}
+.login-mark{display:flex;align-items:center;gap:9px;font-family:"Archivo";font-weight:800;
+  letter-spacing:-.01em;color:var(--court);margin-bottom:22px}
+.login-card h1{font-family:"Archivo";font-weight:800;font-size:26px;line-height:1.1;margin:0 0 8px;letter-spacing:-.02em}
+.login-card .sub{color:var(--muted);margin:0 0 22px;font-size:14px}
+.login-card label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.login-card input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:15px}
+.login-card button{margin-top:16px;width:100%;padding:13px;border:0;border-radius:10px;
+  background:var(--court);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.login-card button:hover{background:var(--court-2)}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--ball);
+  box-shadow:inset -3px -3px 0 rgba(0,0,0,.12);display:inline-block}
+
+/* ---------- Shell ---------- */
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.nav{background:var(--court);color:#cdd8e3;padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:9px;padding:6px 8px 22px}
+.brand-name{font-family:"Archivo";font-weight:800;color:#fff;letter-spacing:-.01em}
+.nav nav{display:flex;flex-direction:column;gap:2px}
+.nav nav a{padding:11px 12px;border-radius:9px;font-weight:500;font-size:14px;color:#b7c4d1;text-decoration:none}
+.nav nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav nav a.on{background:var(--ball);color:var(--court);font-weight:700}
+.logout{margin-top:auto;padding:11px 12px;font-size:13px;color:#8fa0b1;text-decoration:none}
+.logout:hover{color:#fff}
+
+.content{padding:28px 34px;max-width:1100px}
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px}
+.page-head h1{font-family:"Archivo";font-weight:800;font-size:26px;margin:0;letter-spacing:-.02em}
+.today{color:var(--muted);font-size:13px}
+
+.flash{background:var(--court);color:#fff;padding:11px 16px;border-radius:10px;margin-bottom:18px;font-size:14px}
+
+/* ---------- Hero ---------- */
+.hero{background:var(--court);border-radius:var(--radius);color:#fff;padding:26px 30px;
+  display:flex;align-items:center;justify-content:space-between;gap:30px;margin-bottom:20px;flex-wrap:wrap;
+  background-image:linear-gradient(115deg,var(--court) 58%,#16324f 100%);}
+.hero-label{font-size:13px;color:#9fb2c4;font-weight:500}
+.hero-number{font-family:"Archivo";font-weight:800;font-size:70px;line-height:.95;letter-spacing:-.03em;color:#fff;margin-top:2px}
+.hero-number.empty{color:#38546f}
+.trend{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px}
+.trend.up{background:rgba(198,242,78,.18);color:var(--ball)}
+.trend.down{background:rgba(228,87,46,.22);color:#ff9c7d}
+.trend.flat{background:rgba(255,255,255,.08);color:#9fb2c4}
+.hero-stats{display:flex;gap:26px;flex-wrap:wrap}
+.hs{display:flex;flex-direction:column}
+.hs b{font-family:"Archivo";font-weight:800;font-size:26px;letter-spacing:-.01em}
+.hs b i{color:#9fb2c4;font-style:normal;font-weight:600;margin:0 2px}
+.hs span{font-size:12px;color:#9fb2c4;margin-top:2px}
+
+/* ---------- Cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:20px}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;gap:12px}
+.card-head h2{font-family:"Archivo";font-weight:700;font-size:16px;margin:0}
+.hint{font-size:12px;color:var(--muted)}
+.more{font-size:13px;color:var(--muted);text-decoration:none}
+.more:hover{color:var(--court)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chart-card canvas{width:100%!important}
+
+.empty-state{color:var(--muted);font-size:14px;padding:14px 0;line-height:1.5}
+.empty-state a{color:var(--court);font-weight:600}
+
+/* ---------- Feed ---------- */
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.feed li:first-child{border-top:0}
+.feed-main{display:flex;flex-direction:column}
+.feed-main b{font-size:14px}
+.feed-main small{color:var(--muted);font-size:12px;margin-top:1px}
+.badge{min-width:34px;height:34px;padding:0 8px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:13px}
+.badge.win{background:rgba(31,138,76,.14);color:var(--win)}
+.badge.loss{background:rgba(228,87,46,.14);color:var(--loss)}
+.badge.train{background:rgba(16,36,59,.08);color:var(--court)}
+.badge.sm{min-width:26px;height:24px;font-size:12px}
+
+/* ---------- Formulários ---------- */
+.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.field{display:flex;flex-direction:column}
+.field.wide{grid-column:span 2}
+.field.submit{grid-column:1/-1;align-items:flex-start;justify-content:flex-end}
+.field label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.field input,.field select{padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;background:#fff}
+.field input:focus,.field select:focus{outline:2px solid var(--ball);border-color:transparent}
+.field.submit button{padding:11px 22px;border:0;border-radius:9px;background:var(--court);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.field.submit button:hover{background:var(--court-2)}
+
+/* ---------- Tabelas ---------- */
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+.table td{padding:11px 10px;border-bottom:1px solid var(--line)}
+.table tr:last-child td{border-bottom:0}
+.table .right{text-align:right}
+.notes-cell{color:var(--muted);max-width:280px}
+.link-danger{background:none;border:0;color:var(--loss);cursor:pointer;font-size:13px;font-family:inherit}
+.link-danger:hover{text-decoration:underline}
+.origin{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.origin.itf{background:rgba(198,242,78,.25);color:#4a6b0e}
+.origin.manual{background:rgba(16,36,59,.08);color:var(--muted)}
+
+/* ---------- Botões utilitários ---------- */
+button.ghost,button.link-plain{font-family:inherit}
+.ghost{padding:9px 16px;border:1px solid var(--line);background:#fff;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer;color:var(--court)}
+.ghost:hover{border-color:var(--court)}
+.callout{background:#fff;border:1px solid var(--line);border-left:4px solid var(--ball);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.callout code{background:var(--paper);padding:1px 6px;border-radius:5px;color:var(--court);font-size:13px}
+
+/* ---------- Responsivo ---------- */
+@media(max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .nav{flex-direction:row;height:auto;position:static;align-items:center;flex-wrap:wrap;gap:6px}
+  .nav .brand{padding:6px 8px}
+  .logout{margin-left:auto}
+  .content{padding:20px 16px}
+  .grid-2{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:repeat(2,1fr)}
+  .field.wide{grid-column:span 2}
+  .hero-number{font-size:56px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

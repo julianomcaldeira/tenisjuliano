@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Ranking ITF — Meu Tênis{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Ranking ITF</h1>
+  <form method="post" action="{{ url_for('capture_now') }}">
+    <button class="ghost" type="submit">Capturar agora</button>
+  </form>
+</div>
+
+{% if not itf_url %}
+<div class="callout">
+  Para a captura automática, configure a variável <code>ITF_PROFILE_URL</code> no Render com o link do
+  seu perfil público na ITF (quando ele estiver ativo). Até lá, registre suas posições manualmente
+  abaixo — o gráfico de evolução funciona do mesmo jeito.
+</div>
+{% endif %}
+
+<section class="card form-card">
+  <form method="post" class="form-grid">
+    <div class="field"><label>Data</label><input type="date" name="date" value="{{ today }}"></div>
+    <div class="field"><label>Posição</label><input type="number" name="rank" min="1" placeholder="Ex.: 1240" required></div>
+    <div class="field"><label>Pontos</label><input type="number" step="0.01" name="points" placeholder="opcional"></div>
+    <div class="field"><label>Categoria</label>
+      <select name="category"><option>45+</option><option>40+</option><option>50+</option><option>35+</option><option>55+</option></select>
+    </div>
+    <div class="field wide"><label>Notas</label><input type="text" name="notes" placeholder="opcional"></div>
+    <div class="field submit"><button type="submit">Registrar posição</button></div>
+  </form>
+</section>
+
+<section class="card">
+  {% if snaps %}
+  <table class="table">
+    <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th>Origem</th><th></th></tr></thead>
+    <tbody>
+      {% for s in snaps %}
+      <tr>
+        <td>{{ s.date.strftime('%d/%m/%y') }}</td>
+        <td><b>#{{ s.rank }}</b></td>
+        <td>{{ '%.0f'|format(s.points) if s.points is not none else '—' }}</td>
+        <td>{{ s.category }}</td>
+        <td><span class="origin {{ s.source }}">{{ 'ITF' if s.source=='itf' else 'manual' }}</span></td>
+        <td class="right">
+          <form method="post" action="{{ url_for('delete_snapshot', sid=s.id) }}" onsubmit="return confirm('Apagar este registro?')">
+            <button class="link-danger">apagar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state">Nenhuma posição registrada ainda.</div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Painel — Meu Tênis{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Painel</h1>
+  <span class="today">{{ stats.matches_month }} partidas · {{ stats.trainings_month }} treinos neste mês</span>
+</div>
+
+<section class="hero">
+  <div class="hero-rank">
+    <span class="hero-label">Ranking Masters {{ stats.rank_category }}</span>
+    {% if stats.current_rank %}
+      <div class="hero-number">#{{ stats.current_rank }}</div>
+      {% if stats.rank_trend is not none and stats.rank_trend != 0 %}
+        <span class="trend {{ 'up' if stats.rank_trend > 0 else 'down' }}">
+          {{ '▲' if stats.rank_trend > 0 else '▼' }} {{ stats.rank_trend|abs }} posições
+        </span>
+      {% elif stats.has_ranking %}
+        <span class="trend flat">estável</span>
+      {% endif %}
+    {% else %}
+      <div class="hero-number empty">—</div>
+      <span class="trend flat">registre sua 1ª posição em Ranking ITF</span>
+    {% endif %}
+  </div>
+  <div class="hero-stats">
+    <div class="hs"><b>{{ stats.total_matches }}</b><span>partidas</span></div>
+    <div class="hs"><b>{{ stats.win_rate }}%</b><span>aproveitamento</span></div>
+    <div class="hs"><b>{{ stats.wins }}<i>-</i>{{ stats.losses }}</b><span>V–D</span></div>
+    <div class="hs"><b>{{ stats.streak }}</b><span>vitórias seguidas</span></div>
+    <div class="hs"><b>{{ (stats.minutes_month // 60) }}h{{ '%02d'|format(stats.minutes_month % 60) }}</b><span>treino no mês</span></div>
+  </div>
+</section>
+
+<section class="card chart-card">
+  <div class="card-head"><h2>Evolução no ranking</h2><span class="hint">quanto mais baixo, melhor</span></div>
+  {% if stats.has_ranking %}
+    <canvas id="rankChart" height="90"></canvas>
+  {% else %}
+    <div class="empty-state">Sem posições registradas ainda. Assim que você tiver perfil ativo na ITF,
+      cada captura vira um ponto aqui e sua evolução aparece.</div>
+  {% endif %}
+</section>
+
+<div class="grid-2">
+  <section class="card chart-card">
+    <div class="card-head"><h2>Partidas por mês</h2></div>
+    <canvas id="matchChart" height="150"></canvas>
+  </section>
+  <section class="card chart-card">
+    <div class="card-head"><h2>Treino por semana</h2><span class="hint">minutos</span></div>
+    <canvas id="trainChart" height="150"></canvas>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>Últimas partidas</h2><a class="more" href="{{ url_for('matches_view') }}">ver todas</a></div>
+    {% if recent_matches %}
+      <ul class="feed">
+        {% for m in recent_matches %}
+        <li>
+          <span class="badge {{ 'win' if m.is_win else 'loss' }}">{{ 'V' if m.is_win else 'D' }}</span>
+          <div class="feed-main">
+            <b>{{ m.opponent or 'Adversário' }}</b>
+            <small>{{ m.date.strftime('%d/%m/%Y') }} · {{ m.category }}{% if m.score %} · {{ m.score }}{% endif %}</small>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">Nenhuma partida ainda. <a href="{{ url_for('matches_view') }}">Registrar a primeira</a>.</div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Últimos treinos</h2><a class="more" href="{{ url_for('trainings_view') }}">ver todos</a></div>
+    {% if recent_trainings %}
+      <ul class="feed">
+        {% for t in recent_trainings %}
+        <li>
+          <span class="badge train">{{ t.duration_min }}′</span>
+          <div class="feed-main">
+            <b>{{ t.focus or 'Treino' }}</b>
+            <small>{{ t.date.strftime('%d/%m/%Y') }} · intensidade {{ t.intensity }}/5</small>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">Nenhum treino ainda. <a href="{{ url_for('trainings_view') }}">Registrar o primeiro</a>.</div>
+    {% endif %}
+  </section>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>initDashboard({{ 'true' if stats.has_ranking else 'false' }});</script>
+{% endblock %}

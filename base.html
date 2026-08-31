@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Meu Tênis{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if session.get('auth') %}
+<div class="shell">
+  <aside class="nav">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="brand-name">Meu Tênis</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'on' if request.endpoint=='dashboard' }}">Painel</a>
+      <a href="{{ url_for('matches_view') }}" class="{{ 'on' if request.endpoint=='matches_view' }}">Partidas</a>
+      <a href="{{ url_for('trainings_view') }}" class="{{ 'on' if request.endpoint=='trainings_view' }}">Treinos</a>
+      <a href="{{ url_for('ranking_view') }}" class="{{ 'on' if request.endpoint=='ranking_view' }}">Ranking ITF</a>
+    </nav>
+    <a class="logout" href="{{ url_for('logout') }}">Sair</a>
+  </aside>
+
+  <main class="content">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+  {% block auth %}{% endblock %}
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

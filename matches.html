@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Partidas — Meu Tênis{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Partidas</h1></div>
+
+<section class="card form-card">
+  <form method="post" class="form-grid">
+    <div class="field"><label>Data</label><input type="date" name="date" value="{{ today }}"></div>
+    <div class="field wide"><label>Adversário</label><input type="text" name="opponent" placeholder="Nome do adversário"></div>
+    <div class="field"><label>Resultado</label>
+      <select name="result"><option value="win">Vitória</option><option value="loss">Derrota</option></select>
+    </div>
+    <div class="field"><label>Placar</label><input type="text" name="score" placeholder="6/4 6/3"></div>
+    <div class="field"><label>Piso</label>
+      <select name="surface"><option value="">—</option><option>Saibro</option><option>Rápida</option><option>Grama</option><option>Sintético</option></select>
+    </div>
+    <div class="field"><label>Tipo</label>
+      <select name="category"><option>Amistoso</option><option>Torneio ITF</option><option>Jogo-treino</option><option>Outro torneio</option></select>
+    </div>
+    <div class="field wide"><label>Notas</label><input type="text" name="notes" placeholder="Como foi o jogo, o que funcionou..."></div>
+    <div class="field submit"><button type="submit">Registrar partida</button></div>
+  </form>
+</section>
+
+<section class="card">
+  {% if matches %}
+  <table class="table">
+    <thead><tr><th>Data</th><th>Res.</th><th>Adversário</th><th>Placar</th><th>Piso</th><th>Tipo</th><th></th></tr></thead>
+    <tbody>
+      {% for m in matches %}
+      <tr>
+        <td>{{ m.date.strftime('%d/%m/%y') }}</td>
+        <td><span class="badge sm {{ 'win' if m.is_win else 'loss' }}">{{ 'V' if m.is_win else 'D' }}</span></td>
+        <td>{{ m.opponent or '—' }}</td>
+        <td>{{ m.score or '—' }}</td>
+        <td>{{ m.surface or '—' }}</td>
+        <td>{{ m.category }}</td>
+        <td class="right">
+          <form method="post" action="{{ url_for('delete_match', mid=m.id) }}" onsubmit="return confirm('Apagar esta partida?')">
+            <button class="link-danger">apagar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state">Nenhuma partida registrada ainda.</div>
+  {% endif %}
+</section>
+{% endblock %}

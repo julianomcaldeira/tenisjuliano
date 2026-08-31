@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block auth %}
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-mark"><span class="dot"></span> Meu Tênis</div>
+    <h1>Seu progresso, de ponta a ponta.</h1>
+    <p class="sub">Ranking no Masters, partidas e treinos — o histórico que a ITF não te mostra.</p>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}
+    {% endwith %}
+    <form method="post">
+      <label for="password">Senha</label>
+      <input type="password" id="password" name="password" autofocus required>
+      <button type="submit">Entrar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
