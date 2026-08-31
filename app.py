@@ -25,7 +25,12 @@ import itf_scraper
 # ---------------------------------------------------------------------------
 # Configuração
 # ---------------------------------------------------------------------------
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.dirname(os.path.abspath(__file__)),
+    static_folder=os.path.dirname(os.path.abspath(__file__)),
+    static_url_path="",
+)
 app.secret_key = os.environ.get("SECRET_KEY", "troque-esta-chave-no-render")
 
 # Banco: usa Postgres (Neon) se DATABASE_URL existir; senão SQLite local.
