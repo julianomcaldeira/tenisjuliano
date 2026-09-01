@@ -72,7 +72,7 @@ a{color:inherit}
   display:flex;align-items:center;justify-content:space-between;gap:30px;margin-bottom:20px;flex-wrap:wrap;
   background-image:linear-gradient(115deg,var(--court) 58%,#16324f 100%);}
 .hero-label{font-size:13px;color:#9fb2c4;font-weight:500}
-.hero-number{font-family:"Archivo";font-weight:800;font-size:70px;line-height:.95;letter-spacing:-.03em;color:#fff;margin-top:2px}
+.hero-number{font-family:"Archivo";font-weight:800;font-size:clamp(42px, 10vw, 70px);line-height:.95;letter-spacing:-.03em;color:#fff;margin-top:2px}
 .hero-number.empty{color:#38546f}
 .trend{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px}
 .trend.up{background:rgba(198,242,78,.18);color:var(--ball)}
@@ -80,19 +80,19 @@ a{color:inherit}
 .trend.flat{background:rgba(255,255,255,.08);color:#9fb2c4}
 .hero-stats{display:flex;gap:26px;flex-wrap:wrap}
 .hs{display:flex;flex-direction:column}
-.hs b{font-family:"Archivo";font-weight:800;font-size:26px;letter-spacing:-.01em}
+.hs b{font-family:"Archivo";font-weight:800;font-size:clamp(20px, 5vw, 26px);letter-spacing:-.01em}
 .hs b i{color:#9fb2c4;font-style:normal;font-weight:600;margin:0 2px}
 .hs span{font-size:12px;color:#9fb2c4;margin-top:2px}
 
 /* ---------- Cards ---------- */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:20px}
-.card-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;gap:12px}
-.card-head h2{font-family:"Archivo";font-weight:700;font-size:16px;margin:0}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.card-head h2{font-family:"Archivo";font-weight:700;font-size:clamp(14px, 3vw, 16px);margin:0}
 .hint{font-size:12px;color:var(--muted)}
 .more{font-size:13px;color:var(--muted);text-decoration:none}
 .more:hover{color:var(--court)}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.chart-card canvas{width:100%!important}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px}
+.chart-card canvas{width:100%!important; height:auto}
 
 .empty-state{color:var(--muted);font-size:14px;padding:14px 0;line-height:1.5}
 .empty-state a{color:var(--court);font-weight:600}
@@ -101,10 +101,10 @@ a{color:inherit}
 .feed{list-style:none;margin:0;padding:0}
 .feed li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
 .feed li:first-child{border-top:0}
-.feed-main{display:flex;flex-direction:column}
+.feed-main{display:flex;flex-direction:column;min-width:0}
 .feed-main b{font-size:14px}
 .feed-main small{color:var(--muted);font-size:12px;margin-top:1px}
-.badge{min-width:34px;height:34px;padding:0 8px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:13px}
+.badge{min-width:34px;height:34px;padding:0 8px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0}
 .badge.win{background:rgba(31,138,76,.14);color:var(--win)}
 .badge.loss{background:rgba(228,87,46,.14);color:var(--loss)}
 .badge.train{background:rgba(16,36,59,.08);color:var(--court)}

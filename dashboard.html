@@ -16,6 +16,8 @@
     {% endif %}
     <a class="hero-avatar-edit" href="{{ url_for('perfil_view') }}">Alterar foto</a>
   </div>
+
+  {# 
   <div class="hero-rank">
     <span class="hero-label">Ranking Masters {{ stats.rank_category }}</span>
     {% if stats.current_rank %}
@@ -32,6 +34,8 @@
       <span class="trend flat">registre sua 1ª posição em Ranking ITF</span>
     {% endif %}
   </div>
+  #}
+
   <div class="hero-stats">
     <div class="hs"><b>{{ stats.total_matches }}</b><span>partidas</span></div>
     <div class="hs"><b>{{ stats.win_rate }}%</b><span>aproveitamento</span></div>
@@ -41,6 +45,7 @@
   </div>
 </section>
 
+{# 
 <section class="card chart-card">
   <div class="card-head"><h2>Evolução no ranking</h2><span class="hint">quanto mais baixo, melhor</span></div>
   {% if stats.has_ranking %}
@@ -50,6 +55,7 @@
       cada captura vira um ponto aqui e sua evolução aparece.</div>
   {% endif %}
 </section>
+#}
 
 <div class="grid-2">
   <section class="card chart-card">
