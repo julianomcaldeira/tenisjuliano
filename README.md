@@ -15,6 +15,7 @@ Roda **de graça** no Render.
 - **Treinos**: registra duração, foco (técnico, físico, tático...) e intensidade.
 - **Ranking ITF**: guarda cada posição ao longo do tempo e desenha o gráfico de evolução.
 - **Torneios**: calendário do World Tennis Masters Tour direto da ITF, com filtros por região e período, dentro do app.
+- **PWA instalável**: instale no iPhone pelo Safari como app nativo (ícone na tela inicial, abre em tela cheia).
 - Protegido por senha (o app fica público na internet, mas só você entra).
 
 ---
@@ -116,14 +117,18 @@ A lista vem direto da ITF sem navegador em produção: `GET https://www.itftenni
 
 Ao clicar em um torneio você vê os detalhes dentro do app (sede, endereço, diretor, bola, quadro) raspados da página pública do torneio. O Fact Sheet completo e o prazo de inscrição exigem login no Tour Zone; se configurar `ITF_TOUR_ZONE_EMAIL` e `ITF_TOUR_ZONE_PASSWORD` nas variáveis de ambiente do Render, o app indicará o acesso. O sistema também detecta mudanças entre atualizações e mostra no topo da aba e na página do torneio o que foi adicionado, removido ou alterado.
 
+## PWA instalável (iPhone)
+
+O app já é instalável: `manifest.webmanifest` com ícones `icon-192/256/384/512` e `icon-512-maskable.png` (bola `#C6F24E` sobre fundo `#10243B`) mais `apple-touch-icon.png` 180, e `sw.js` com cache do app shell. No iPhone, abra o site no Safari, toque em Compartilhar → Adicionar à Tela de Início. Para (re)gerar ícones: `python3 /tmp/gen_icons.py`.
+
 ## Arquivos
 
 Repositório flat, tudo na raiz, sem pastas `templates/` ou `static/`:
 
-- `app.py` — aplicação, banco e rotas (usa `template_folder` e `static_folder` na raiz)
+- `app.py` — aplicação, banco e rotas (usa `template_folder` e `static_folder` na raiz; rotas `/manifest.webmanifest` e `/sw.js` garantem mimetype)
 - `itf_scraper.py` — leitor do ranking na ITF
 - `itf_calendar.py` — busca do calendário Masters (endpoint, cache, filtros)
 - `torneios_seed.json` — dados de exemplo para primeira carga offline
-- `base.html`, `dashboard.html`, `matches.html`, `trainings.html`, `ranking.html`, `torneios.html`, `perfil.html`, `login.html` — telas
-- `style.css`, `app.js` — estilo e gráficos
+- `base.html`, `dashboard.html`, `matches.html`, `trainings.html`, `ranking.html`, `torneios.html`, `torneio_detalhe.html`, `perfil.html`, `login.html` — telas
+- `style.css`, `app.js`, `manifest.webmanifest`, `sw.js`, `icon-*.png`, `apple-touch-icon.png` — estilo, gráficos e PWA
 - `render.yaml`, `requirements.txt` — configuração de deploy

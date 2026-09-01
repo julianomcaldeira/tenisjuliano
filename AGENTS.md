@@ -23,8 +23,10 @@ Roda no Render (plano free) com deploy automático a cada push no GitHub.
 
 Repositório FLAT: todos os arquivos ficam na raiz, sem pastas `templates/` ou `static/`.
 `app.py` usa `template_folder` e `static_folder` apontando para a raiz e carrega os `.html`,
-`style.css` e `app.js` de lá. `app.py` concentra configuração, modelos (Match, Training,
-RankingSnapshot, Profile, TournamentCache), rotas e as APIs de gráfico (`/api/...`).
+`style.css`, `app.js`, `manifest.webmanifest`, `sw.js` e os ícones `icon-*.png` de lá.
+Rotas explícitas `/manifest.webmanifest` e `/sw.js` em `app.py` garantem mimetype e
+Cache-Control corretos para o PWA. `app.py` concentra configuração, modelos (Match, Training,
+RankingSnapshot, Profile, TournamentCache etc.), rotas e as APIs de gráfico (`/api/...`).
 `itf_scraper.py` lê o ranking do perfil público da ITF. `itf_calendar.py` busca o
 calendário Masters via endpoint `tennis/api/TournamentApi/GetCalendar` (circuitCode VT) com
 cache no banco. Configuração de deploy em `render.yaml`, `requirements.txt` e `.python-version`.
@@ -91,6 +93,17 @@ leitura genérica por regex (procura "ranking", "pts", "45+"). Quando a página 
 os seletores por `soup.select(...)` apontando para os elementos certos. Enquanto isso, o usuário
 registra o ranking manualmente na aba Ranking ITF e o gráfico funciona igual. Não invente a
 estrutura do HTML sem ter a página real em mãos.
+
+## PWA instalável (iPhone/Safari)
+
+O app é um PWA instalável sem loja. Raiz contém `manifest.webmanifest` (name `Meu Tênis`,
+`start_url` `/`, `display` `standalone`, cores `#10243B`, ícones 192/256/384/512 e 512 maskable
+com bola `#C6F24E` sobre fundo `#10243B`, mais `apple-touch-icon.png` 180), `sw.js` com
+cache do app shell (cache-first para estáticos, network-first para páginas autenticadas com
+fallback offline) e `base.html` com `link rel=manifest`, `theme-color` e tags
+`apple-mobile-web-app-capable`/`apple-touch-icon`. O service worker só registra se
+`serviceWorker` existir (iOS/Safari) e não cacheia POST de login. Para (re)gerar ícones:
+`python3 /tmp/gen_icons.py` (gera PNGs quadrados navy/bola) e referencie no manifest.
 
 ## Deploy (produção)
 

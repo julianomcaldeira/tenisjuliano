@@ -17,7 +17,7 @@ except ImportError:
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, jsonify, abort, Response
+    session, flash, jsonify, abort, Response, send_from_directory
 )
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -870,6 +870,24 @@ def api_trainings_series():
         buckets[monday.isoformat()] = buckets.get(monday.isoformat(), 0) + t.duration_min
     labels = sorted(buckets.keys())
     return jsonify({"labels": labels, "minutes": [buckets[k] for k in labels]})
+
+
+# ---------------------------------------------------------------------------
+# PWA — manifest e service worker (flat, raiz)
+# ---------------------------------------------------------------------------
+@app.route("/manifest.webmanifest")
+def manifest_webmanifest():
+    resp = send_from_directory(app.static_folder, "manifest.webmanifest", mimetype="application/manifest+json")
+    resp.headers["Cache-Control"] = "public, max-age=3600"
+    return resp
+
+
+@app.route("/sw.js")
+def service_worker():
+    resp = send_from_directory(app.static_folder, "sw.js", mimetype="application/javascript")
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Service-Worker-Allowed"] = "/"
+    return resp
 
 
 if __name__ == "__main__":
