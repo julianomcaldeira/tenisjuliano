@@ -3,6 +3,7 @@ Meu Tênis — diário pessoal de progresso (ITF Masters + treinos e partidas).
 App único em Flask. Roda no Render de graça.
 """
 import os
+import base64
 from datetime import datetime, date, timedelta
 from functools import wraps
 
@@ -16,9 +17,10 @@ except ImportError:
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, jsonify, abort
+    session, flash, jsonify, abort, Response
 )
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import secure_filename
 
 import itf_scraper
 
@@ -39,6 +41,7 @@ if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB para foto
 
 db = SQLAlchemy(app)
 
@@ -82,8 +85,37 @@ class RankingSnapshot(db.Model):
     notes = db.Column(db.String(200), default="")
 
 
+class Profile(db.Model):
+    """Foto de perfil do usuário único — guardada em base64 no banco (Neon/Postgres)
+    para persistir no Render (filesystem é efêmero)."""
+    id = db.Column(db.Integer, primary_key=True)
+    photo_b64 = db.Column(db.Text, nullable=True)
+    photo_mime = db.Column(db.String(50), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+def get_profile():
+    p = Profile.query.get(1)
+    if not p:
+        p = Profile(id=1)
+        db.session.add(p)
+        db.session.commit()
+    return p
+
+
+def get_photo_data_uri():
+    p = Profile.query.get(1)
+    if p and p.photo_b64 and p.photo_mime:
+        return f"data:{p.photo_mime};base64,{p.photo_b64}"
+    return None
+
+
 with app.app_context():
     db.create_all()
+    # garante linha única de perfil
+    if not Profile.query.get(1):
+        db.session.add(Profile(id=1))
+        db.session.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +215,7 @@ def dashboard():
         stats=stats,
         recent_matches=matches[:6],
         recent_trainings=trainings[:6],
+        photo_data_uri=get_photo_data_uri(),
     )
 
 
@@ -339,6 +372,67 @@ def _save_itf_snapshot(result):
             category=result.get("category", "45+"), source="itf",
         ))
     db.session.commit()
+
+
+# ---------------------------------------------------------------------------
+# Perfil / Foto
+# ---------------------------------------------------------------------------
+ALLOWED_PHOTO_MIMES = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+
+
+@app.route("/perfil", methods=["GET", "POST"])
+@login_required
+def perfil_view():
+    profile = get_profile()
+    if request.method == "POST":
+        # Remover foto
+        if request.form.get("action") == "remover":
+            profile.photo_b64 = None
+            profile.photo_mime = None
+            db.session.commit()
+            flash("Foto removida.")
+            return redirect(url_for("perfil_view"))
+
+        f = request.files.get("foto")
+        if not f or not f.filename:
+            flash("Escolha um arquivo de imagem.")
+            return redirect(url_for("perfil_view"))
+        mime = f.mimetype or ""
+        # fallback por extensão
+        if mime not in ALLOWED_PHOTO_MIMES:
+            ext = os.path.splitext(f.filename)[1].lower()
+            mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+            mime = mime_map.get(ext, mime)
+        if mime not in ALLOWED_PHOTO_MIMES:
+            flash("Formato inválido. Use JPG, PNG ou WEBP.")
+            return redirect(url_for("perfil_view"))
+        data = f.read()
+        if len(data) > 5 * 1024 * 1024:
+            flash("Imagem muito grande. Máximo 5 MB.")
+            return redirect(url_for("perfil_view"))
+        if len(data) == 0:
+            flash("Arquivo vazio.")
+            return redirect(url_for("perfil_view"))
+        profile.photo_b64 = base64.b64encode(data).decode("ascii")
+        profile.photo_mime = mime
+        db.session.commit()
+        flash("Foto atualizada!")
+        return redirect(url_for("perfil_view"))
+
+    return render_template("perfil.html", photo_data_uri=get_photo_data_uri())
+
+
+@app.route("/foto")
+@login_required
+def foto():
+    p = Profile.query.get(1)
+    if not p or not p.photo_b64:
+        abort(404)
+    try:
+        raw = base64.b64decode(p.photo_b64)
+    except Exception:
+        abort(404)
+    return Response(raw, mimetype=p.photo_mime or "image/jpeg")
 
 
 # ---------------------------------------------------------------------------

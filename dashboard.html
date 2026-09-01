@@ -8,6 +8,14 @@
 </div>
 
 <section class="hero">
+  <div class="hero-profile">
+    {% if photo_data_uri %}
+      <img src="{{ photo_data_uri }}" alt="Foto de perfil" class="hero-avatar">
+    {% else %}
+      <div class="hero-avatar placeholder"><span>Foto</span></div>
+    {% endif %}
+    <a class="hero-avatar-edit" href="{{ url_for('perfil_view') }}">Alterar foto</a>
+  </div>
   <div class="hero-rank">
     <span class="hero-label">Ranking Masters {{ stats.rank_category }}</span>
     {% if stats.current_rank %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Perfil — Meu Tênis{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Perfil</h1>
+  <span class="today">Sua foto aparece no painel</span>
+</div>
+
+<section class="card">
+  <div class="perfil-grid">
+    <div class="perfil-foto-wrap">
+      {% if photo_data_uri %}
+        <img src="{{ photo_data_uri }}" alt="Sua foto" class="perfil-foto">
+      {% else %}
+        <div class="perfil-foto placeholder">
+          <span>Sem foto</span>
+          <small>JPG, PNG ou WEBP — até 5 MB</small>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="perfil-actions">
+      <h2>Sua foto</h2>
+      <p class="hint" style="margin:6px 0 14px">Anexe uma foto sua. Ela fica guardada no banco (Neon) e aparece no painel. No Render o disco é efêmero, por isso guardamos em base64 no Postgres — não se perde no deploy.</p>
+
+      <form method="post" enctype="multipart/form-data" class="perfil-form">
+        <div class="field">
+          <label for="foto">Escolher arquivo</label>
+          <input type="file" id="foto" name="foto" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" required>
+        </div>
+        <div class="field submit" style="margin-top:12px">
+          <button type="submit">Salvar foto</button>
+        </div>
+      </form>
+
+      {% if photo_data_uri %}
+      <form method="post" style="margin-top:12px">
+        <input type="hidden" name="action" value="remover">
+        <button type="submit" class="ghost" style="width:100%">Remover foto</button>
+      </form>
+      {% endif %}
+
+      <div class="callout" style="margin-top:18px">
+        Dica: use uma foto quadrada (ex: 500×500) para ficar bem no círculo do painel.
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
