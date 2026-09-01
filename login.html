@@ -1,10 +1,17 @@
 {% extends "base.html" %}
 {% block auth %}
 <div class="login-wrap">
-  <div class="login-card">
-    <div class="login-mark"><span class="dot"></span> Meu Tênis</div>
+  <div class="login-card login-card-jmc">
+    <div class="login-mark"><span class="dot"></span> JMC Tênis</div>
+    <div class="login-juliano">
+      <div class="login-avatar">JM</div>
+      <div class="login-juliano-text">
+        <b>App do Juliano</b>
+        <span>Juliano Montesino Caldeira • 45+ • JMC</span>
+      </div>
+    </div>
     <h1>Seu progresso, de ponta a ponta.</h1>
-    <p class="sub">Ranking no Masters, partidas e treinos — o histórico que a ITF não te mostra.</p>
+    <p class="sub">Seu tênis, sua história — o histórico que a ITF e a FPT não te mostram. Feito para você.</p>
     {% with messages = get_flashed_messages() %}
       {% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}
     {% endwith %}

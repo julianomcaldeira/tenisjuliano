@@ -2,9 +2,25 @@
 {% block title %}Painel — Meu Tênis{% endblock %}
 {% block content %}
 
-<div class="page-head">
-  <h1>Painel</h1>
-  <span class="today">{{ stats.matches_month }} partidas · {{ stats.trainings_month }} treinos neste mês</span>
+<div class="page-head" style="align-items:flex-start">
+  <div>
+    <h1 style="display:flex;align-items:center;gap:10px"><span class="jmc-badge">JMC</span> Painel do Juliano</h1>
+    <span class="today">App exclusivo de Juliano Montesino Caldeira • 45+ • JMC Tênis • São Paulo</span>
+  </div>
+  <span class="today" style="text-align:right">{{ stats.matches_month }} partidas · {{ stats.trainings_month }} treinos neste mês</span>
+</div>
+
+<div class="card" style="background:linear-gradient(135deg,#10243B 0%,#1a3a5f 100%);color:#fff;border:none;display:flex;align-items:center;gap:16px;padding:18px 20px">
+  {% if photo_data_uri %}
+    <img src="{{ photo_data_uri }}" alt="Juliano" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid #C6F24E">
+  {% else %}
+    <div style="width:56px;height:56px;border-radius:50%;background:#0B1A2E;border:3px solid #C6F24E;display:grid;place-items:center;font-family:Archivo;font-weight:800;color:#C6F24E">JM</div>
+  {% endif %}
+  <div>
+    <div style="font-family:Archivo;font-weight:800;font-size:18px;line-height:1">Fala, Juliano!</div>
+    <div style="font-size:13px;color:#cdd8e3;margin-top:4px">Seu tênis em evolução — {{ stats.total_matches }} partidas registradas, {{ stats.win_rate }}% de aproveitamento. Bora para a próxima?</div>
+  </div>
+  <a href="{{ url_for('perfil_view') }}" class="ghost" style="margin-left:auto;background:#C6F24E;color:#10243B;border:none;font-weight:800">Meu perfil</a>
 </div>
 
 <section class="hero">

@@ -1,7 +1,7 @@
 {
-  "name": "Meu Tênis",
-  "short_name": "Meu Tênis",
-  "description": "Diário de progresso no tênis — evolução no Masters da ITF, partidas e treinos.",
+  "name": "Juliano Tênis — JMC",
+  "short_name": "JMC Tênis",
+  "description": "App do Juliano — evolução no Masters da ITF e FPT, partidas e treinos. 45+ JMC.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
