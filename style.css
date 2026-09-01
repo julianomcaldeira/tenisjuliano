@@ -147,6 +147,21 @@ button.ghost,button.link-plain{font-family:inherit}
 .callout{background:#fff;border:1px solid var(--line);border-left:4px solid var(--ball);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
 .callout code{background:var(--paper);padding:1px 6px;border-radius:5px;color:var(--court);font-size:13px}
 
+/* ---------- Torneios ---------- */
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg-btn{padding:7px 12px;border:1px solid var(--line);background:#fff;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+.seg-btn.on{background:var(--court);color:#fff;border-color:var(--court)}
+.seg-btn:hover{border-color:var(--court)}
+.torneios-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.torneio-card{margin-bottom:0}
+.torneio-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.torneio-cat{font-family:"Archivo";font-weight:800;font-size:13px;letter-spacing:.02em;color:var(--court);background:rgba(198,242,78,.28);padding:4px 10px;border-radius:20px}
+.torneio-dates{font-size:13px;color:var(--muted);font-weight:600}
+.torneio-name{font-family:"Archivo";font-weight:800;font-size:17px;margin:0;letter-spacing:-.01em}
+.torneio-meta{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.torneio-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:900px){ .torneios-grid{grid-template-columns:1fr} }
+
 /* ---------- Tabelas responsivas ---------- */
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px}
 .table-wrap .table{min-width:520px}

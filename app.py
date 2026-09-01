@@ -23,6 +23,9 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
+import json as _json
+
+import itf_calendar
 import itf_scraper
 
 # ---------------------------------------------------------------------------
@@ -96,6 +99,14 @@ class Profile(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class TournamentCache(db.Model):
+    """Cache do calendário Masters — último JSON da ITF + data da coleta."""
+    id = db.Column(db.Integer, primary_key=True)
+    data_json = db.Column(db.Text, nullable=True)
+    fetched_at = db.Column(db.DateTime, nullable=True)
+    total_items = db.Column(db.Integer, default=0)
+
+
 def get_profile():
     p = Profile.query.get(1)
     if not p:
@@ -123,11 +134,140 @@ def check_password(plain):
     return plain == APP_PASSWORD
 
 
+# ---------------------------------------------------------------------------
+# Torneios — helpers de cache
+# ---------------------------------------------------------------------------
+def _load_torneios_seed():
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "torneios_seed.json"), "r", encoding="utf-8") as f:
+            return _json.load(f)
+    except Exception:
+        return {"items": [], "totalItems": 0}
+
+
+def _get_torneios_cache_row():
+    row = TournamentCache.query.get(1)
+    if not row:
+        row = TournamentCache(id=1)
+        db.session.add(row)
+        db.session.commit()
+    return row
+
+
+def _save_torneios_cache(items, total_items):
+    row = _get_torneios_cache_row()
+    row.data_json = _json.dumps({"items": items, "totalItems": total_items}, ensure_ascii=False)
+    row.fetched_at = datetime.utcnow()
+    row.total_items = total_items
+    db.session.commit()
+
+
+def _get_torneios_cached():
+    row = TournamentCache.query.get(1)
+    if row and row.data_json:
+        try:
+            data = _json.loads(row.data_json)
+            return data.get("items", []), row.fetched_at, row.total_items
+        except Exception:
+            return [], None, 0
+    return [], None, 0
+
+
+def _is_cache_stale(fetched_at):
+    if not fetched_at:
+        return True
+    age = datetime.utcnow() - fetched_at
+    return age.total_seconds() > itf_calendar.CACHE_TTL_HOURS * 3600
+
+
+def _fetch_and_cache_torneios(force=False):
+    """
+    Tenta buscar da ITF e atualizar cache. Se falhar, mantém cache antigo.
+    Retorna (items, fetched_at, warning_msg)
+    """
+    items, fetched_at, total = _get_torneios_cached()
+    stale = _is_cache_stale(fetched_at)
+    should_fetch = force or stale or not items
+
+    if not should_fetch:
+        return items, fetched_at, None
+
+    try:
+        # busca próximos 6 meses — mundo
+        df, dt = itf_calendar._default_date_range()
+        result = itf_calendar.fetch_from_itf(date_from=df, date_to=dt, take=200)
+        fresh = result["items"]
+        _save_torneios_cache(fresh, result.get("totalItems", len(fresh)))
+        return fresh, datetime.utcnow(), None
+    except Exception as e:
+        # falha: serve cache se houver
+        if items:
+            return items, fetched_at, f"Não foi possível atualizar da ITF agora ({e}); mostrando dados de {fetched_at.strftime('%d/%m/%Y %H:%M') if fetched_at else 'cache'}."
+        # sem cache: usa seed
+        seed = _load_torneios_seed()
+        seed_items = seed.get("items", [])
+        if seed_items:
+            # salva seed como cache para próximas visitas
+            _save_torneios_cache(seed_items, seed.get("totalItems", len(seed_items)))
+            return seed_items, datetime.utcnow(), "Calendário da ITF temporariamente indisponível; mostrando dados de exemplo salvos. Tente Atualizar agora mais tarde."
+        return [], None, f"Calendário indisponível e sem cache: {e}"
+
+
+def _filter_torneios(items, regiao="mundo", periodo="180", pais_busca=""):
+    now = date.today()
+    try:
+        dias = int(periodo)
+    except Exception:
+        dias = 180
+    # período padrão: próximos N dias; se 0 ou vazio, mostra tudo
+    if dias > 0:
+        limite = now + timedelta(days=dias)
+    else:
+        limite = None
+
+    filtered = []
+    pais_busca = (pais_busca or "").strip().lower()
+    for it in items:
+        # filtro de país/região
+        code = (it.get("hostNationCode") or "").upper()
+        if regiao == "brasil" and code != "BRA":
+            continue
+        if regiao == "sul" and code not in itf_calendar.SOUTH_AMERICA_CODES:
+            continue
+        # filtro por busca de país (texto)
+        if pais_busca and pais_busca not in it.get("hostNation", "").lower() and pais_busca not in code.lower() and pais_busca not in it.get("location", "").lower():
+            continue
+        # filtro por período
+        sd = it.get("startDate") or ""
+        try:
+            d = datetime.fromisoformat(sd.replace("Z", "")).date()
+        except Exception:
+            d = None
+        if d and limite:
+            if d < now or d > limite:
+                continue
+        # 45+ já está implícito: VT traz todos Masters, não filtramos idade para não esconder torneios
+        filtered.append(it)
+
+    # ordena por data
+    def _k(x):
+        try:
+            return datetime.fromisoformat((x.get("startDate") or "").replace("Z", ""))
+        except Exception:
+            return datetime.max
+    filtered.sort(key=_k)
+    return filtered
+
+
 with app.app_context():
     db.create_all()
     # garante linha única de perfil
     if not Profile.query.get(1):
         db.session.add(Profile(id=1))
+        db.session.commit()
+    # garante cache de torneios
+    if not TournamentCache.query.get(1):
+        db.session.add(TournamentCache(id=1))
         db.session.commit()
 
 
@@ -470,6 +610,62 @@ def foto():
     except Exception:
         abort(404)
     return Response(raw, mimetype=p.photo_mime or "image/jpeg")
+
+
+# ---------------------------------------------------------------------------
+# Torneios — calendário Masters ITF
+# ---------------------------------------------------------------------------
+@app.route("/torneios", methods=["GET"])
+@login_required
+def torneios_view():
+    regiao = request.args.get("regiao", "mundo")
+    if regiao not in ("brasil", "sul", "mundo"):
+        regiao = "mundo"
+    periodo = request.args.get("periodo", "180")
+    if periodo not in ("30", "90", "180", "360"):
+        periodo = "180"
+    pais_busca = request.args.get("pais", "")
+
+    items, fetched_at, warning = _fetch_and_cache_torneios(force=False)
+    filtrados = _filter_torneios(items, regiao=regiao, periodo=periodo, pais_busca=pais_busca)
+
+    # info de cache para rodapé
+    cache_info = None
+    if fetched_at:
+        try:
+            cache_info = fetched_at.strftime("%d/%m/%Y %H:%M UTC")
+        except Exception:
+            cache_info = str(fetched_at)
+
+    return render_template(
+        "torneios.html",
+        torneios=filtrados,
+        total=len(filtrados),
+        total_all=len(items),
+        regiao=regiao,
+        periodo=periodo,
+        pais_busca=pais_busca,
+        fetched_at=cache_info,
+        warning=warning,
+        official_url=itf_calendar.ITF_CALENDAR_OFFICIAL_URL,
+    )
+
+
+@app.route("/torneios/atualizar", methods=["POST"])
+@login_required
+def torneios_atualizar():
+    items, fetched_at, warning = _fetch_and_cache_torneios(force=True)
+    if warning and "Não foi possível" in warning:
+        flash(warning)
+    elif warning:
+        flash(warning)
+    else:
+        flash(f"Calendário atualizado: {len(items)} torneios.")
+    # mantém filtros atuais
+    regiao = request.form.get("regiao") or request.args.get("regiao") or "mundo"
+    periodo = request.form.get("periodo") or request.args.get("periodo") or "180"
+    pais = request.form.get("pais") or request.args.get("pais") or ""
+    return redirect(url_for("torneios_view", regiao=regiao, periodo=periodo, pais=pais))
 
 
 # ---------------------------------------------------------------------------

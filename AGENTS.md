@@ -21,10 +21,13 @@ Roda no Render (plano free) com deploy automático a cada push no GitHub.
 
 ## Estrutura
 
-`app.py` concentra configuração, modelos (Match, Training, RankingSnapshot), rotas e as APIs
-de gráfico (`/api/...`). `itf_scraper.py` lê o ranking do perfil público da ITF. `templates/`
-e `static/` são a interface. Configuração de deploy em `render.yaml`, `requirements.txt` e
-`.python-version`.
+Repositório FLAT: todos os arquivos ficam na raiz, sem pastas `templates/` ou `static/`.
+`app.py` usa `template_folder` e `static_folder` apontando para a raiz e carrega os `.html`,
+`style.css` e `app.js` de lá. `app.py` concentra configuração, modelos (Match, Training,
+RankingSnapshot, Profile, TournamentCache), rotas e as APIs de gráfico (`/api/...`).
+`itf_scraper.py` lê o ranking do perfil público da ITF. `itf_calendar.py` busca o
+calendário Masters via endpoint `tennis/api/TournamentApi/GetCalendar` (circuitCode VT) com
+cache no banco. Configuração de deploy em `render.yaml`, `requirements.txt` e `.python-version`.
 
 ## Rodar local
 
@@ -53,6 +56,26 @@ O texto da interface é em português (pt-BR). A paleta é "quadra": navy `#1024
 `#C6F24E`, branco-quadra `#EDF1F0`; fontes Archivo (títulos e números) e Inter (corpo). Mantenha
 esse visual ao criar telas novas. Ranking: número menor é melhor, então o eixo Y do gráfico de
 evolução é invertido — não "conserte" isso.
+
+## Torneios — calendário Masters ITF
+
+Aba `Torneios` exibe dentro do app os torneios do World Tennis Masters Tour vindos da ITF.
+Fonte: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar` com params
+`circuitCode=VT`, `dateFrom`, `dateTo`, `skip`, `take`, `nationCodes` etc (ver
+`itf_calendar.py:57` — `ITF_CALENDAR_BASE_URL` e `DEFAULT_PARAMS`). Headers mínimos:
+`User-Agent`, `Accept: application/json`, `Referer`. Sem auth. Resposta `{items, totalItems}`
+com campos `tournamentName`, `dates`, `location/venue`, `category` (MT100 a MT1000),
+`surfaceDesc`, `hostNation/hostNationCode`, `startDate/endDate`, `tournamentLink`.
+
+Cache: tabela `TournamentCache` (id 1) guarda último JSON + `fetched_at`. Ao abrir a aba,
+se o cache tem mais de 24h (`CACHE_TTL_HOURS`), busca da ITF e atualiza; senão serve cache.
+Botão `Atualizar agora` força busca. Se a busca falhar (Incapsula/HTML ou timeout), serve
+último cache com aviso discreto e link pro calendário oficial; sem cache, mostra mensagem
+amigável e link. Seed em `torneios_seed.json` garante primeira visita mesmo offline.
+Filtros na tela: região (Brasil, América do Sul, Mundo) e período (próximos torneios por
+padrão). Por torneio: nome, datas, cidade/país, categoria/grade, superfície, prazo de
+inscrição (não vem no endpoint, então exibe aviso), link pro torneio. Cada torneio tem
+várias faixas etárias; não filtrar por idade.
 
 ## Pendência conhecida — leitor da ITF
 

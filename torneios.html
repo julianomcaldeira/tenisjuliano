@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Torneios — Meu Tênis{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Torneios</h1>
+  <form method="post" action="{{ url_for('torneios_atualizar') }}">
+    <input type="hidden" name="regiao" value="{{ regiao }}">
+    <input type="hidden" name="periodo" value="{{ periodo }}">
+    <input type="hidden" name="pais" value="{{ pais_busca }}">
+    <button class="ghost" type="submit">Atualizar agora</button>
+  </form>
+</div>
+
+{% if warning %}
+<div class="callout" style="border-left-color: var(--loss);">
+  {{ warning }} <a href="{{ official_url }}" target="_blank" rel="noopener">Ver calendário oficial da ITF</a>.
+</div>
+{% endif %}
+
+<section class="card">
+  <form method="get" class="form-grid" style="grid-template-columns: auto auto auto 1fr auto; align-items: end;">
+    <div class="field">
+      <label>Região</label>
+      <div class="seg">
+        <a href="{{ url_for('torneios_view', regiao='brasil', periodo=periodo, pais=pais_busca) }}" class="seg-btn {{ 'on' if regiao=='brasil' }}">Brasil</a>
+        <a href="{{ url_for('torneios_view', regiao='sul', periodo=periodo, pais=pais_busca) }}" class="seg-btn {{ 'on' if regiao=='sul' }}">América do Sul</a>
+        <a href="{{ url_for('torneios_view', regiao='mundo', periodo=periodo, pais=pais_busca) }}" class="seg-btn {{ 'on' if regiao=='mundo' }}">Mundo</a>
+      </div>
+    </div>
+    <div class="field">
+      <label>Período</label>
+      <div class="seg">
+        <a href="{{ url_for('torneios_view', regiao=regiao, periodo='30', pais=pais_busca) }}" class="seg-btn {{ 'on' if periodo=='30' }}">30 dias</a>
+        <a href="{{ url_for('torneios_view', regiao=regiao, periodo='90', pais=pais_busca) }}" class="seg-btn {{ 'on' if periodo=='90' }}">90 dias</a>
+        <a href="{{ url_for('torneios_view', regiao=regiao, periodo='180', pais=pais_busca) }}" class="seg-btn {{ 'on' if periodo=='180' }}">6 meses</a>
+        <a href="{{ url_for('torneios_view', regiao=regiao, periodo='360', pais=pais_busca) }}" class="seg-btn {{ 'on' if periodo=='360' }}">12 meses</a>
+      </div>
+    </div>
+    <div class="field">
+      <label for="pais">Buscar país/cidade</label>
+      <input type="text" id="pais" name="pais" value="{{ pais_busca }}" placeholder="ex: Brasil, Chile, Lisboa">
+    </div>
+    <div class="field"><label>&nbsp;</label><button type="submit" class="ghost">Filtrar</button></div>
+    <div class="field" style="text-align:right">
+      <span class="hint">{{ total }} de {{ total_all }} torneios</span>
+    </div>
+  </form>
+  {% if fetched_at %}<div class="hint" style="margin-top:10px">Atualizado em {{ fetched_at }} • <a href="{{ official_url }}" target="_blank" rel="noopener">calendário oficial</a></div>{% endif %}
+</section>
+
+{% if torneios %}
+<div class="torneios-grid">
+  {% for t in torneios %}
+  <article class="card torneio-card">
+    <div class="torneio-head">
+      <span class="torneio-cat">{{ t.category }}</span>
+      <span class="torneio-dates">{{ t.dates }}</span>
+    </div>
+    <h3 class="torneio-name">{{ t.tournamentName }}</h3>
+    {% if t.promotionalName and t.promotionalName != t.tournamentName %}<div class="hint" style="margin-top:2px">{{ t.promotionalName }}</div>{% endif %}
+    <div class="torneio-meta">
+      <span>{{ t.location }}{% if t.hostNation %} • {{ t.hostNation }} ({{ t.hostNationCode }}){% endif %}</span>
+      {% if t.surfaceDesc %}<span>• {{ t.surfaceDesc }}{% if t.indoorOrOutDoor %} {{ t.indoorOrOutDoor }}{% endif %}</span>{% endif %}
+    </div>
+    <div class="torneio-foot">
+      <span class="hint">Prazo de inscrição: não informado pela ITF neste calendário</span>
+      {% if t.tournamentLink %}<a class="more" href="https://www.itftennis.com{{ t.tournamentLink }}" target="_blank" rel="noopener">Ver no site da ITF →</a>{% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    Nenhum torneio encontrado para este filtro. Tente ampliar o período ou mudar a região.
+    <br><a href="{{ official_url }}" target="_blank" rel="noopener">Abrir calendário oficial da ITF</a>
+  </div>
+</section>
+{% endif %}
+
+<div class="callout">
+  Fonte: ITF World Tennis Masters Tour — dados exibidos dentro do app via endpoint <code>tennis/api/TournamentApi/GetCalendar</code> (circuitCode VT). Cada torneio Masters reúne várias faixas etárias; a lista não é filtrada por idade para não esconder torneios. Foco 45+ simples mantido, mas todos os torneios aparecem.
+</div>
+
+{% endblock %}

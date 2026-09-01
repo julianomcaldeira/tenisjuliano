@@ -14,6 +14,7 @@ Roda **de graça** no Render.
 - **Partidas**: registra cada jogo (adversário, placar, piso, vitória/derrota, torneio ou amistoso).
 - **Treinos**: registra duração, foco (técnico, físico, tático...) e intensidade.
 - **Ranking ITF**: guarda cada posição ao longo do tempo e desenha o gráfico de evolução.
+- **Torneios**: calendário do World Tennis Masters Tour direto da ITF, com filtros por região e período, dentro do app.
 - Protegido por senha (o app fica público na internet, mas só você entra).
 
 ---
@@ -63,6 +64,7 @@ Abra, digite sua senha e comece a usar.
 - Treinou? Aba **Treinos** → duração, foco, intensidade.
 - A cada atualização do ranking na ITF, aba **Ranking ITF** → registra a posição. Cada registro
   vira um ponto no gráfico de evolução do painel.
+- Procurando torneio? Aba **Torneios** traz o calendário oficial da ITF com atalhos Brasil, América do Sul e Mundo e filtro por período, além do botão Atualizar agora.
 
 ## Captura automática do ranking (quando seu perfil ITF existir, em 2027)
 
@@ -108,8 +110,18 @@ estrutura e as convenções do projeto, e já entende o que pode mexer. Fez uma 
 > Como agora você usa git de verdade (e não o upload manual do GitHub web), aquele problema de
 > deploy pela metade não acontece mais: cada push envia tudo de uma vez.
 
+## Torneios — de onde vem
+
+A lista vem direto da ITF sem navegador em produção: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=VT&dateFrom=...&dateTo=...&take=200` (ver `itf_calendar.py`). O app guarda o último resultado em cache no banco por 24 horas e só atualiza quando você abre a aba ou clica em Atualizar agora. Se a ITF estiver fora do ar, o app mostra o último cache com aviso e link pro calendário oficial.
+
 ## Arquivos
-- `app.py` — aplicação e banco de dados
-- `itf_scraper.py` — leitor do ranking na ITF (adaptável)
-- `templates/`, `static/` — telas e estilo
+
+Repositório flat, tudo na raiz, sem pastas `templates/` ou `static/`:
+
+- `app.py` — aplicação, banco e rotas (usa `template_folder` e `static_folder` na raiz)
+- `itf_scraper.py` — leitor do ranking na ITF
+- `itf_calendar.py` — busca do calendário Masters (endpoint, cache, filtros)
+- `torneios_seed.json` — dados de exemplo para primeira carga offline
+- `base.html`, `dashboard.html`, `matches.html`, `trainings.html`, `ranking.html`, `torneios.html`, `perfil.html`, `login.html` — telas
+- `style.css`, `app.js` — estilo e gráficos
 - `render.yaml`, `requirements.txt` — configuração de deploy
