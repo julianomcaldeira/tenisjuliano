@@ -20,6 +20,7 @@ from flask import (
     session, flash, jsonify, abort, Response
 )
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 import itf_scraper
@@ -86,11 +87,12 @@ class RankingSnapshot(db.Model):
 
 
 class Profile(db.Model):
-    """Foto de perfil do usuário único — guardada em base64 no banco (Neon/Postgres)
+    """Foto de perfil + senha do usuário único — guardada no banco (Neon/Postgres)
     para persistir no Render (filesystem é efêmero)."""
     id = db.Column(db.Integer, primary_key=True)
     photo_b64 = db.Column(db.Text, nullable=True)
     photo_mime = db.Column(db.String(50), nullable=True)
+    password_hash = db.Column(db.Text, nullable=True)  # se preenchido, sobrepõe APP_PASSWORD
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
@@ -108,6 +110,17 @@ def get_photo_data_uri():
     if p and p.photo_b64 and p.photo_mime:
         return f"data:{p.photo_mime};base64,{p.photo_b64}"
     return None
+
+
+def check_password(plain):
+    """Verifica senha: usa hash do banco se existir, senão APP_PASSWORD do env."""
+    p = Profile.query.get(1)
+    if p and p.password_hash:
+        try:
+            return check_password_hash(p.password_hash, plain)
+        except Exception:
+            return False
+    return plain == APP_PASSWORD
 
 
 with app.app_context():
@@ -133,7 +146,7 @@ def login_required(view):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        if request.form.get("password") == APP_PASSWORD:
+        if check_password(request.form.get("password") or ""):
             session["auth"] = True
             return redirect(url_for("dashboard"))
         flash("Senha incorreta. Tente de novo.")
@@ -385,41 +398,65 @@ ALLOWED_PHOTO_MIMES = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
 def perfil_view():
     profile = get_profile()
     if request.method == "POST":
+        action = request.form.get("action") or ""
+
         # Remover foto
-        if request.form.get("action") == "remover":
+        if action == "remover":
             profile.photo_b64 = None
             profile.photo_mime = None
             db.session.commit()
             flash("Foto removida.")
             return redirect(url_for("perfil_view"))
 
+        # Trocar senha
+        if action == "trocar_senha":
+            atual = request.form.get("senha_atual") or ""
+            nova = request.form.get("senha_nova") or ""
+            confirma = request.form.get("senha_confirma") or ""
+            if not check_password(atual):
+                flash("Senha atual incorreta.")
+                return redirect(url_for("perfil_view"))
+            if len(nova) < 4:
+                flash("Nova senha muito curta (mínimo 4 caracteres).")
+                return redirect(url_for("perfil_view"))
+            if nova != confirma:
+                flash("Confirmação não confere com a nova senha.")
+                return redirect(url_for("perfil_view"))
+            profile.password_hash = generate_password_hash(nova, method="pbkdf2:sha256")
+            db.session.commit()
+            flash("Senha alterada com sucesso!")
+            return redirect(url_for("perfil_view"))
+
+        # Upload de foto (action vazio ou foto presente)
         f = request.files.get("foto")
-        if not f or not f.filename:
-            flash("Escolha um arquivo de imagem.")
+        if f and f.filename:
+            mime = f.mimetype or ""
+            if mime not in ALLOWED_PHOTO_MIMES:
+                ext = os.path.splitext(f.filename)[1].lower()
+                mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
+                mime = mime_map.get(ext, mime)
+            if mime not in ALLOWED_PHOTO_MIMES:
+                flash("Formato inválido. Use JPG, PNG ou WEBP.")
+                return redirect(url_for("perfil_view"))
+            data = f.read()
+            if len(data) > 5 * 1024 * 1024:
+                flash("Imagem muito grande. Máximo 5 MB.")
+                return redirect(url_for("perfil_view"))
+            if len(data) == 0:
+                flash("Arquivo vazio.")
+                return redirect(url_for("perfil_view"))
+            profile.photo_b64 = base64.b64encode(data).decode("ascii")
+            profile.photo_mime = mime
+            db.session.commit()
+            flash("Foto atualizada!")
             return redirect(url_for("perfil_view"))
-        mime = f.mimetype or ""
-        # fallback por extensão
-        if mime not in ALLOWED_PHOTO_MIMES:
-            ext = os.path.splitext(f.filename)[1].lower()
-            mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp"}
-            mime = mime_map.get(ext, mime)
-        if mime not in ALLOWED_PHOTO_MIMES:
-            flash("Formato inválido. Use JPG, PNG ou WEBP.")
-            return redirect(url_for("perfil_view"))
-        data = f.read()
-        if len(data) > 5 * 1024 * 1024:
-            flash("Imagem muito grande. Máximo 5 MB.")
-            return redirect(url_for("perfil_view"))
-        if len(data) == 0:
-            flash("Arquivo vazio.")
-            return redirect(url_for("perfil_view"))
-        profile.photo_b64 = base64.b64encode(data).decode("ascii")
-        profile.photo_mime = mime
-        db.session.commit()
-        flash("Foto atualizada!")
+
+        flash("Nenhuma alteração enviada.")
         return redirect(url_for("perfil_view"))
 
-    return render_template("perfil.html", photo_data_uri=get_photo_data_uri())
+    # GET — indica se senha já foi personalizada
+    has_custom_password = bool(profile.password_hash)
+    return render_template("perfil.html", photo_data_uri=get_photo_data_uri(), has_custom_password=has_custom_password)
 
 
 @app.route("/foto")

@@ -4,7 +4,7 @@
 
 <div class="page-head">
   <h1>Perfil</h1>
-  <span class="today">Sua foto aparece no painel</span>
+  <span class="today">Sua foto e sua senha</span>
 </div>
 
 <section class="card">
@@ -46,6 +46,28 @@
       </div>
     </div>
   </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Trocar senha</h2>{% if has_custom_password %}<span class="hint">senha personalizada ativa</span>{% else %}<span class="hint">usando APP_PASSWORD do Render</span>{% endif %}</div>
+  <p class="hint" style="margin:0 0 14px">Altere a senha de acesso ao sistema. Ela é guardada com hash no banco e passa a valer em vez da variável <code>APP_PASSWORD</code>. Se não trocar, continua valendo a do Render.</p>
+  <form method="post" class="form-grid" style="grid-template-columns:1fr 1fr">
+    <input type="hidden" name="action" value="trocar_senha">
+    <div class="field">
+      <label for="senha_atual">Senha atual</label>
+      <input type="password" id="senha_atual" name="senha_atual" required autocomplete="current-password">
+    </div>
+    <div class="field"></div>
+    <div class="field">
+      <label for="senha_nova">Nova senha</label>
+      <input type="password" id="senha_nova" name="senha_nova" required minlength="4" autocomplete="new-password" placeholder="mínimo 4 caracteres">
+    </div>
+    <div class="field">
+      <label for="senha_confirma">Confirmar nova senha</label>
+      <input type="password" id="senha_confirma" name="senha_confirma" required minlength="4" autocomplete="new-password">
+    </div>
+    <div class="field submit"><button type="submit">Alterar senha</button></div>
+  </form>
 </section>
 
 {% endblock %}

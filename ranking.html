@@ -31,6 +31,7 @@
 
 <section class="card">
   {% if snaps %}
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th>Origem</th><th></th></tr></thead>
     <tbody>
@@ -50,6 +51,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
     <div class="empty-state">Nenhuma posição registrada ainda.</div>
   {% endif %}

@@ -147,16 +147,57 @@ button.ghost,button.link-plain{font-family:inherit}
 .callout{background:#fff;border:1px solid var(--line);border-left:4px solid var(--ball);border-radius:10px;padding:14px 16px;font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
 .callout code{background:var(--paper);padding:1px 6px;border-radius:5px;color:var(--court);font-size:13px}
 
+/* ---------- Tabelas responsivas ---------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px}
+.table-wrap .table{min-width:520px}
+
 /* ---------- Responsivo ---------- */
+@media(max-width:900px){
+  .content{padding:24px 22px}
+  .hero{padding:22px 22px;gap:20px}
+  .hero-stats{gap:18px}
+}
 @media(max-width:820px){
   .shell{grid-template-columns:1fr}
-  .nav{flex-direction:row;height:auto;position:static;align-items:center;flex-wrap:wrap;gap:6px}
+  .nav{flex-direction:row;height:auto;position:static;align-items:center;flex-wrap:wrap;gap:6px;padding:14px 12px}
+  .nav nav{flex-direction:row;flex-wrap:wrap;gap:6px;width:100%;order:2}
+  .nav nav a{padding:8px 12px;font-size:13px}
   .nav .brand{padding:6px 8px}
-  .logout{margin-left:auto}
-  .content{padding:20px 16px}
+  .logout{margin-left:auto;order:1}
+  .content{padding:20px 16px;max-width:100%}
   .grid-2{grid-template-columns:1fr}
   .form-grid{grid-template-columns:repeat(2,1fr)}
   .field.wide{grid-column:span 2}
+  .hero{flex-direction:column;align-items:flex-start}
+  .hero-profile{flex-direction:row;align-items:center}
   .hero-number{font-size:56px}
+  .perfil-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .page-head{flex-direction:column;align-items:flex-start;gap:10px}
+  .page-head h1{font-size:22px}
+  .hero{padding:18px 16px}
+  .hero-number{font-size:48px}
+  .hero-stats{gap:16px}
+  .hs b{font-size:22px}
+  .card{padding:16px 14px}
+  .card-head{flex-direction:column;align-items:flex-start;gap:6px}
+  .table{font-size:13px}
+  .table th,.table td{padding:8px 6px}
+  .perfil-foto{width:160px;height:160px}
+  .login-card{padding:28px 22px}
+  .login-card h1{font-size:22px}
+}
+@media(max-width:480px){
+  .content{padding:14px 12px}
+  .nav{padding:10px 10px}
+  .nav nav a{padding:7px 10px;font-size:12px}
+  .form-grid{grid-template-columns:1fr}
+  .field.wide{grid-column:span 1}
+  .hero-number{font-size:42px}
+  .hero-avatar{width:72px;height:72px}
+  .perfil-foto{width:140px;height:140px}
+  .badge{min-width:30px;height:30px;font-size:12px}
+  .login-wrap{padding:16px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

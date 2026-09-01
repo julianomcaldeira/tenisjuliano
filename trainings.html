@@ -20,6 +20,7 @@
 
 <section class="card">
   {% if trainings %}
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th>Data</th><th>Duração</th><th>Foco</th><th>Intensidade</th><th>Notas</th><th></th></tr></thead>
     <tbody>
@@ -39,6 +40,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
     <div class="empty-state">Nenhum treino registrado ainda.</div>
   {% endif %}
