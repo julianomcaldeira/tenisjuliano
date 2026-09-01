@@ -25,6 +25,7 @@ from werkzeug.utils import secure_filename
 
 import json as _json
 
+import fpt_source
 import itf_calendar
 import itf_scraper
 
@@ -125,6 +126,36 @@ class TournamentChange(db.Model):
     new_value = db.Column(db.Text, nullable=True)
     change_type = db.Column(db.String(20), nullable=False)  # added, removed, changed
     detected_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+# --- FPT (totalmente separado do ITF) ---
+class FptTournamentCache(db.Model):
+    """Cache próprio da FPT para torneios abertos."""
+    id = db.Column(db.Integer, primary_key=True)
+    data_json = db.Column(db.Text, nullable=True)
+    fetched_at = db.Column(db.DateTime, nullable=True)
+    total_items = db.Column(db.Integer, default=0)
+    filters_json = db.Column(db.Text, nullable=True)
+
+
+class FptRankingCache(db.Model):
+    """Cache próprio da FPT para ranking (última consulta por year/date/category)."""
+    id = db.Column(db.Integer, primary_key=True)
+    data_json = db.Column(db.Text, nullable=True)
+    fetched_at = db.Column(db.DateTime, nullable=True)
+    total_items = db.Column(db.Integer, default=0)
+    params_json = db.Column(db.Text, nullable=True)
+
+
+class FptRankingSnapshot(db.Model):
+    """Histórico manual do ranking FPT do usuário (separado do ITF)."""
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False, default=date.today)
+    rank = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Float, nullable=True)
+    category = db.Column(db.String(20), default="2M2")
+    source = db.Column(db.String(20), default="manual")
+    notes = db.Column(db.String(200), default="")
 
 
 def get_profile():
@@ -320,6 +351,99 @@ def _filter_torneios(items, regiao="mundo", periodo="180", pais_busca=""):
             return datetime.max
     filtered.sort(key=_k)
     return filtered
+
+
+# ---------------------------------------------------------------------------
+# FPT — helpers de cache (totalmente separados do ITF)
+# ---------------------------------------------------------------------------
+def _get_fpt_torneios_cached(filters=None):
+    row = FptTournamentCache.query.get(1)
+    if row and row.data_json:
+        try:
+            data = _json.loads(row.data_json)
+            # Verifica se os filtros batem
+            cached_filters = _json.loads(row.filters_json) if row.filters_json else {}
+            if cached_filters == (filters or {}):
+                return data.get("items", []), row.fetched_at, row.total_items
+        except Exception:
+            pass
+    return [], None, 0
+
+
+def _save_fpt_torneios_cache(items, total, filters=None):
+    row = FptTournamentCache.query.get(1)
+    if not row:
+        row = FptTournamentCache(id=1)
+        db.session.add(row)
+    row.data_json = _json.dumps({"items": items, "total": total}, ensure_ascii=False)
+    row.fetched_at = datetime.utcnow()
+    row.total_items = total
+    row.filters_json = _json.dumps(filters or {}, ensure_ascii=False)
+    db.session.commit()
+
+
+def _is_fpt_cache_stale(fetched_at):
+    if not fetched_at:
+        return True
+    return (datetime.utcnow() - fetched_at).total_seconds() > fpt_source.CACHE_TTL_HOURS * 3600
+
+
+def _fetch_fpt_torneios_cached(filters=None, force=False):
+    items, fetched_at, total = _get_fpt_torneios_cached(filters)
+    stale = _is_fpt_cache_stale(fetched_at)
+    if not force and not stale and items:
+        return items, fetched_at, None
+    try:
+        result = fpt_source.fetch_torneios_fpt(filters or {})
+        fresh = result.get("items", [])
+        _save_fpt_torneios_cache(fresh, result.get("total", len(fresh)), filters)
+        return fresh, datetime.utcnow(), None
+    except Exception as e:
+        if items:
+            return items, fetched_at, f"Não foi possível atualizar da FPT agora ({e}); mostrando cache de {fetched_at.strftime('%d/%m %H:%M') if fetched_at else 'cache'}."
+        return [], None, f"Torneios FPT indisponíveis e sem cache: {e}"
+
+
+def _get_fpt_ranking_cached(params=None):
+    row = FptRankingCache.query.get(1)
+    if row and row.data_json:
+        try:
+            data = _json.loads(row.data_json)
+            cached_params = _json.loads(row.params_json) if row.params_json else {}
+            if cached_params == (params or {}):
+                return data.get("items", []), row.fetched_at, row.total_items
+        except Exception:
+            pass
+    return [], None, 0
+
+
+def _save_fpt_ranking_cache(items, total, params=None):
+    row = FptRankingCache.query.get(1)
+    if not row:
+        row = FptRankingCache(id=1)
+        db.session.add(row)
+    row.data_json = _json.dumps({"items": items, "total": total}, ensure_ascii=False)
+    row.fetched_at = datetime.utcnow()
+    row.total_items = total
+    row.params_json = _json.dumps(params or {}, ensure_ascii=False)
+    db.session.commit()
+
+
+def _fetch_fpt_ranking_cached(year, date_key, category, force=False):
+    params = {"year": str(year), "date": str(date_key), "category": str(category)}
+    items, fetched_at, total = _get_fpt_ranking_cached(params)
+    is_stale = _is_fpt_cache_stale(fetched_at)
+    if not force and not is_stale and items:
+        return items, fetched_at, None
+    try:
+        result = fpt_source.fetch_ranking_fpt(year, date_key, category)
+        fresh = result.get("items", [])
+        _save_fpt_ranking_cache(fresh, result.get("total", len(fresh)), params)
+        return fresh, datetime.utcnow(), None
+    except Exception as e:
+        if items:
+            return items, fetched_at, f"Não foi possível atualizar ranking FPT agora ({e}); mostrando cache."
+        return [], None, f"Ranking FPT indisponível e sem cache: {e}"
 
 
 with app.app_context():
@@ -826,6 +950,196 @@ def torneio_detalhe(tournament_key):
         official_url="https://www.itftennis.com" + (torneio.get("tournamentLink") or ""),
         fact_auth=fact_auth,
     )
+
+
+# ---------------------------------------------------------------------------
+# FPT — Torneios (totalmente separado do ITF)
+# ---------------------------------------------------------------------------
+@app.route("/fpt/torneios", methods=["GET"])
+@login_required
+def fpt_torneios_view():
+    # Filtros: month, match (classe), club, year
+    f = {
+        "year": request.args.get("year", "").strip(),
+        "half": request.args.get("half", "").strip(),
+        "month": request.args.get("month", "").strip(),
+        "name": request.args.get("name", "").strip(),
+        "match": request.args.get("match", "").strip(),
+        "club": request.args.get("club", "").strip(),
+        "code": request.args.get("code", "").strip(),
+    }
+    # Se nenhum filtro e sem cache, tenta um padrão: sem filtro (mostra aviso)
+    # Mas para facilitar o usuário 2ª classe 40+, pré-preenche match se vazio
+    # Não força, apenas mostra o que o usuário pediu
+    items, fetched_at, warning = _fetch_fpt_torneios_cached(f, force=False)
+    cache_info = fetched_at.strftime("%d/%m/%Y %H:%M UTC") if fetched_at else None
+
+    # Filtros visuais para template
+    return render_template(
+        "fpt_torneios.html",
+        torneios=items,
+        total=len(items),
+        fetched_at=cache_info,
+        warning=warning,
+        official_url=fpt_source.FPT_OFFICIAL_TORNEIOS,
+        filters=f,
+    )
+
+
+@app.route("/fpt/torneios/atualizar", methods=["POST"])
+@login_required
+def fpt_torneios_atualizar():
+    f = {
+        "year": request.form.get("year", "").strip(),
+        "half": request.form.get("half", "").strip(),
+        "month": request.form.get("month", "").strip(),
+        "name": request.form.get("name", "").strip(),
+        "match": request.form.get("match", "").strip(),
+        "club": request.form.get("club", "").strip(),
+        "code": request.form.get("code", "").strip(),
+    }
+    items, fetched_at, warning = _fetch_fpt_torneios_cached(f, force=True)
+    if warning and "Não foi possível" in warning:
+        flash(warning)
+    elif warning:
+        flash(warning)
+    else:
+        flash(f"Torneios FPT atualizados: {len(items)} encontrados.")
+    # Redireciona mantendo filtros
+    qs = "&".join([f"{k}={v}" for k, v in f.items() if v])
+    return redirect(f"/fpt/torneios?{qs}" if qs else url_for("fpt_torneios_view"))
+
+
+# ---------------------------------------------------------------------------
+# FPT — Ranking (manual principal, consulta oficial secundária)
+# ---------------------------------------------------------------------------
+@app.route("/fpt/ranking", methods=["GET", "POST"])
+@login_required
+def fpt_ranking_view():
+    if request.method == "POST":
+        s = FptRankingSnapshot(
+            date=parse_date(request.form.get("date")),
+            rank=int(request.form.get("rank")),
+            points=float(request.form["points"]) if request.form.get("points") else None,
+            category=request.form.get("category", "2M2").strip(),
+            source="manual",
+            notes=request.form.get("notes", "").strip(),
+        )
+        db.session.add(s)
+        db.session.commit()
+        flash("Posição FPT registrada.")
+        return redirect(url_for("fpt_ranking_view"))
+
+    # Histórico manual
+    snaps = FptRankingSnapshot.query.order_by(FptRankingSnapshot.date.desc()).all()
+
+    # Consulta oficial secundária (year/date/category)
+    # Usa os valores mais recentes como padrão se não vier na query
+    year_q = request.args.get("year", "")
+    date_q = request.args.get("date", "")
+    cat_q = request.args.get("category", "")
+
+    # Tenta descobrir year/date/category mais recentes se não fornecidos
+    ranking_items = []
+    ranking_warning = None
+    ranking_fetched = None
+    selected_year = year_q
+    selected_date = date_q
+    selected_cat = cat_q
+
+    # Se não tem filtro, tenta buscar o mais recente automaticamente (2M2)
+    if not (year_q and date_q and cat_q):
+        try:
+            # Busca anos disponíveis via ajax
+            # Por padrão usa 2024 e 2025, pega o mais recente com dados
+            for y in ["2025", "2024"]:
+                try:
+                    datas = fpt_source.fetch_ranking_datas(int(y))
+                    if datas:
+                        # Pega a data mais recente (primeiro da lista costuma ser mais recente)
+                        most_recent = datas[0]
+                        dk = most_recent.get("key") or most_recent.get("value")
+                        # Tenta com categorias padrão
+                        for cat in fpt_source.DEFAULT_RANKING_CATEGORIES:
+                            try:
+                                result = fpt_source.fetch_ranking_fpt(int(y), dk, cat)
+                                if result.get("items"):
+                                    ranking_items = result["items"]
+                                    selected_year = y
+                                    selected_date = dk
+                                    selected_cat = cat
+                                    ranking_fetched = result.get("fetched_at")
+                                    break
+                            except Exception:
+                                continue
+                        if ranking_items:
+                            break
+                except Exception:
+                    continue
+        except Exception as e:
+            ranking_warning = f"Não foi possível carregar ranking oficial agora: {e}"
+    else:
+        # Consulta com filtros explícitos
+        try:
+            ranking_items, fetched_at, warning = _fetch_fpt_ranking_cached(year_q, date_q, cat_q, force=False)
+            ranking_warning = warning
+            selected_year = year_q
+            selected_date = date_q
+            selected_cat = cat_q
+        except Exception as e:
+            ranking_warning = str(e)
+
+    # Para o formulário de consulta, busca opções para preencher selects
+    years = ["2025", "2024", "2023", "2022"]
+    # Datas e categorias serão carregadas via JS com os endpoints ajax, mas também tentamos preencher
+    return render_template(
+        "fpt_ranking.html",
+        snaps=snaps,
+        today=date.today().isoformat(),
+        oficial_url=fpt_source.FPT_OFFICIAL_RANKING,
+        ranking_items=ranking_items[:50],
+        ranking_total=len(ranking_items),
+        ranking_warning=ranking_warning,
+        selected_year=selected_year,
+        selected_date=selected_date,
+        selected_cat=selected_cat,
+        years=years,
+        categories=fpt_source.ALL_RANKING_CATEGORIES,
+    )
+
+
+@app.route("/fpt/ranking/<int:sid>/apagar", methods=["POST"])
+@login_required
+def fpt_delete_snapshot(sid):
+    s = FptRankingSnapshot.query.get_or_404(sid)
+    db.session.delete(s)
+    db.session.commit()
+    flash("Registro FPT apagado.")
+    return redirect(url_for("fpt_ranking_view"))
+
+
+@app.route("/fpt/ranking/atualizar", methods=["POST"])
+@login_required
+def fpt_ranking_atualizar():
+    year = request.form.get("year") or request.args.get("year")
+    date_key = request.form.get("date") or request.args.get("date")
+    cat = request.form.get("category") or request.args.get("category") or "2M2"
+    if not (year and date_key and cat):
+        flash("Escolha ano, data e categoria para atualizar.")
+        return redirect(url_for("fpt_ranking_view"))
+    items, fetched_at, warning = _fetch_fpt_ranking_cached(year, date_key, cat, force=True)
+    if warning:
+        flash(warning)
+    else:
+        flash(f"Ranking FPT atualizado: {len(items)} tenistas em {cat}.")
+    return redirect(url_for("fpt_ranking_view", year=year, date=date_key, category=cat))
+
+
+@app.route("/api/fpt-ranking-series")
+@login_required
+def api_fpt_ranking_series():
+    snaps = FptRankingSnapshot.query.order_by(FptRankingSnapshot.date.asc()).all()
+    return jsonify([{"date": s.date.isoformat(), "rank": s.rank, "category": s.category} for s in snaps])
 
 
 # ---------------------------------------------------------------------------

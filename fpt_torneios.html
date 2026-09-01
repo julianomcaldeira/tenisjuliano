@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Torneios FPT — Meu Tênis{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Torneios FPT</h1>
+  <form method="post" action="{{ url_for('fpt_torneios_atualizar') }}">
+    {% for k,v in filters.items() %}
+      <input type="hidden" name="{{ k }}" value="{{ v }}">
+    {% endfor %}
+    <button class="ghost" type="submit">Atualizar agora</button>
+  </form>
+</div>
+
+{% if warning %}
+<div class="callout" style="border-left-color: var(--loss);">
+  {{ warning }} <a href="{{ official_url }}" target="_blank" rel="noopener">Ver site oficial FPT</a>.
+</div>
+{% endif %}
+
+<section class="card">
+  <div class="card-head"><h2>Filtros</h2><span class="hint">Federação Paulista — abertos</span></div>
+  <form method="get" class="form-grid">
+    <div class="field"><label>Ano</label><input type="tel" name="year" value="{{ filters.year }}" placeholder="2025" maxlength="4"></div>
+    <div class="field"><label>Semestre</label>
+      <select name="half"><option value="" {% if not filters.half %}selected{% endif %}>Selecione</option><option value="1" {% if filters.half=='1' %}selected{% endif %}>1º</option><option value="2" {% if filters.half=='2' %}selected{% endif %}>2º</option></select>
+    </div>
+    <div class="field"><label>Mês</label>
+      <select name="month">
+        <option value="" {% if not filters.month %}selected{% endif %}>Selecione</option>
+        <option value="01" {% if filters.month=='01' %}selected{% endif %}>Janeiro</option>
+        <option value="02" {% if filters.month=='02' %}selected{% endif %}>Fevereiro</option>
+        <option value="03" {% if filters.month=='03' %}selected{% endif %}>Março</option>
+        <option value="04" {% if filters.month=='04' %}selected{% endif %}>Abril</option>
+        <option value="05" {% if filters.month=='05' %}selected{% endif %}>Maio</option>
+        <option value="06" {% if filters.month=='06' %}selected{% endif %}>Junho</option>
+        <option value="07" {% if filters.month=='07' %}selected{% endif %}>Julho</option>
+        <option value="08" {% if filters.month=='08' %}selected{% endif %}>Agosto</option>
+        <option value="09" {% if filters.month=='09' %}selected{% endif %}>Setembro</option>
+        <option value="10" {% if filters.month=='10' %}selected{% endif %}>Outubro</option>
+        <option value="11" {% if filters.month=='11' %}selected{% endif %}>Novembro</option>
+        <option value="12" {% if filters.month=='12' %}selected{% endif %}>Dezembro</option>
+      </select>
+    </div>
+    <div class="field"><label>Código</label><input type="tel" name="code" value="{{ filters.code }}" placeholder="1234" maxlength="4"></div>
+    <div class="field wide"><label>Nome</label><input type="text" name="name" value="{{ filters.name }}" placeholder="Nome do torneio"></div>
+    <div class="field"><label>Classe/Categoria</label><input type="text" name="match" value="{{ filters.match }}" placeholder="2M1, 2M2, 40M, 45M"></div>
+    <div class="field wide"><label>Clube/Cidade</label>
+      <select name="club">
+        <option value="" {% if not filters.club %}selected{% endif %}>Selecione</option>
+        <option value="ECP" {% if filters.club=='ECP' %}selected{% endif %}>ECP - Esporte Clube Pinheiros</option>
+        <option value="CML" {% if filters.club=='CML' %}selected{% endif %}>CML - Clube Monte Líbano</option>
+        <option value="ATC" {% if filters.club=='ATC' %}selected{% endif %}>ATC - Alphaville Tênis Clube</option>
+        <option value="SHT" {% if filters.club=='SHT' %}selected{% endif %}>SHT - Sociedade Harmonia</option>
+        <option value="SHC" {% if filters.club=='SHC' %}selected{% endif %}>SHC - Sociedade Hípica de Campinas</option>
+        <option value="CPM" {% if filters.club=='CPM' %}selected{% endif %}>CPM - Clube Paineiras</option>
+        <option value="CE" {% if filters.club=='CE' %}selected{% endif %}>CE - Clube Espéria</option>
+        <option value="CCSP" {% if filters.club=='CCSP' %}selected{% endif %}>CCSP - Clube de Campo SP</option>
+      </select>
+    </div>
+    <div class="field submit"><button type="submit">Buscar</button></div>
+  </form>
+  <div class="hint" style="margin-top:10px">Dica: para 2ª classe use <code>2M1, 2M2</code> e para 40+ use <code>40M</code> ou <code>45M</code> no campo Classe. Se deixar vazio, traz abertos gerais.</div>
+  {% if fetched_at %}<div class="hint" style="margin-top:6px">Atualizado em {{ fetched_at }} • <a href="{{ official_url }}" target="_blank" rel="noopener">site oficial FPT</a></div>{% endif %}
+</section>
+
+{% if torneios %}
+<div class="torneios-grid">
+  {% for t in torneios %}
+  <article class="card torneio-card">
+    <div class="torneio-head">
+      <span class="torneio-cat">{{ t.category or t.classe or 'Torneio' }}</span>
+      <span class="torneio-dates">{{ t.dates or t.data or '' }}</span>
+    </div>
+    <h3 class="torneio-name">{{ t.nome or t.tournamentName or t.name or 'Torneio FPT' }}</h3>
+    <div class="torneio-meta">
+      <span>{{ t.clube or t.local or t.club or '' }}{% if t.cidade %} • {{ t.cidade }}{% endif %}</span>
+    </div>
+    {% if t.link %}
+    <div class="torneio-foot"><a class="more" href="{{ t.link }}" target="_blank" rel="noopener">Ver no site da FPT →</a></div>
+    {% elif t.tournamentLink %}
+    <div class="torneio-foot"><a class="more" href="https://www.itftennis.com{{ t.tournamentLink }}" target="_blank" rel="noopener">Link →</a></div>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<section class="card">
+  <div class="empty-state">
+    Nenhum torneio encontrado para este filtro. Tente ampliar (ex: deixe Ano vazio ou use <code>2M2</code> em Classe) ou abra o <a href="{{ official_url }}" target="_blank" rel="noopener">site oficial da FPT</a>.
+    {% if warning is none %}<br><span class="hint">Se a tabela não veio, o SisFPT pode estar sem torneios abertos no momento ou exigir que o filtro traga resultados via JS — o cache tentará novamente em Atualizar agora.</span>{% endif %}
+  </div>
+</section>
+{% endif %}
+
+<div class="callout">
+  Fonte: Federação Paulista de Tênis — área pública SisFPT. Esta seção é totalmente independente do ITF; usa módulo <code>fpt_source.py</code> e tabelas <code>FptTournamentCache</code> próprias.
+</div>
+
+{% endblock %}

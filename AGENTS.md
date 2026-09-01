@@ -26,10 +26,13 @@ Repositório FLAT: todos os arquivos ficam na raiz, sem pastas `templates/` ou `
 `style.css`, `app.js`, `manifest.webmanifest`, `sw.js` e os ícones `icon-*.png` de lá.
 Rotas explícitas `/manifest.webmanifest` e `/sw.js` em `app.py` garantem mimetype e
 Cache-Control corretos para o PWA. `app.py` concentra configuração, modelos (Match, Training,
-RankingSnapshot, Profile, TournamentCache etc.), rotas e as APIs de gráfico (`/api/...`).
-`itf_scraper.py` lê o ranking do perfil público da ITF. `itf_calendar.py` busca o
-calendário Masters via endpoint `tennis/api/TournamentApi/GetCalendar` (circuitCode VT) com
-cache no banco. Configuração de deploy em `render.yaml`, `requirements.txt` e `.python-version`.
+RankingSnapshot, Profile, TournamentCache etc.; **FPT**: `FptTournamentCache`,
+`FptRankingCache`, `FptRankingSnapshot` totalmente separados do ITF), rotas e as APIs de
+gráfico (`/api/...`). `itf_scraper.py` lê o ranking do perfil público da ITF.
+`itf_calendar.py` busca o calendário Masters via endpoint `tennis/api/TournamentApi/GetCalendar`
+(circuitCode VT) com cache no banco. `fpt_source.py` busca dados da FPT (SisFPT) com
+endpoints próprios e cache separado. Configuração de deploy em `render.yaml`,
+`requirements.txt` e `.python-version`.
 
 ## Rodar local
 
@@ -59,9 +62,9 @@ O texto da interface é em português (pt-BR). A paleta é "quadra": navy `#1024
 esse visual ao criar telas novas. Ranking: número menor é melhor, então o eixo Y do gráfico de
 evolução é invertido — não "conserte" isso.
 
-## Torneios — calendário Masters ITF
+## Torneios — calendário Masters ITF (fonte independente)
 
-Aba `Torneios` exibe dentro do app os torneios do World Tennis Masters Tour vindos da ITF.
+Aba `Torneios` (menu principal) exibe dentro do app os torneios do World Tennis Masters Tour vindos da ITF.
 Fonte: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar` com params
 `circuitCode=VT`, `dateFrom`, `dateTo`, `skip`, `take`, `nationCodes` etc (ver
 `itf_calendar.py:57` — `ITF_CALENDAR_BASE_URL` e `DEFAULT_PARAMS`). Headers mínimos:
@@ -76,15 +79,35 @@ Fact Sheet/Acceptance List. Fact Sheet completo exige login no Tour Zone; se
 `ITF_TOUR_ZONE_EMAIL`/`ITF_TOUR_ZONE_PASSWORD` estiverem definidos (env vars no Render,
 nunca no código), o app indica que requer login e guarda hook para futura autenticacao.
 
-Cache: `TournamentCache` (id 1) guarda último JSON + `fetched_at`. `TournamentDetailCache`
+Cache ITF: `TournamentCache` (id 1) guarda último JSON + `fetched_at`. `TournamentDetailCache`
 guarda detalhes por `tournamentKey`. Ao abrir a aba, se o cache tem mais de 24h
 (`CACHE_TTL_HOURS`), busca da ITF e atualiza; senão serve cache. Botão `Atualizar agora`
 força busca. Se a busca falhar (Incapsula/HTML ou timeout), serve último cache com aviso
 discreto e link pro calendário oficial; sem cache, usa `torneios_seed.json`. Filtros:
 região (Brasil, América do Sul, Mundo) e período (próximos torneios por padrão).
-Histórico: `TournamentChange` registra diff entre snapshots (`added`, `removed`, `changed`
-por campo em `TRACKED_FIELDS`) e a lista é mostrada no topo da aba e na página de detalhe
-`torneio_detalhe.html`. Cada torneio Masters tem várias faixas etárias; não filtrar por idade.
+Histórico: `TournamentChange` registra diff entre snapshots e a lista é mostrada no topo da aba
+e na página de detalhe `torneio_detalhe.html`. Cada torneio Masters tem várias faixas etárias;
+não filtrar por idade. Esta fonte é totalmente separada da FPT.
+
+## Federação Paulista de Tênis — FPT (fonte independente)
+
+Bloco `FPT` no menu (grupo com `Torneios FPT` e `Ranking FPT`), totalmente separado do ITF:
+módulo próprio `fpt_source.py`, tabelas próprias `FptTournamentCache`, `FptRankingCache` e
+`FptRankingSnapshot` (histórico manual), páginas `fpt_torneios.html` e `fpt_ranking.html`.
+Nunca mistura dados do ITF.
+
+Torneios FPT: `GET https://sisfpt.com.br/area-publica/torneios/abertos?code=&year=&half=&month=&name=&match=&club=`
+onde `match` filtra classe/categoria (ex: `2M1`, `2M2` para 2ª classe; `40M`, `45M` para idade) e
+`club` identifica cidade/clube (ex: `ECP`). Se a tabela não vier de forma confiável sem JS,
+o app serve último cache com aviso e link para o site oficial e reporta a limitação.
+
+Ranking FPT: `GET .../rankings/tenistas/ajax/data/{year}` e `.../ajax/categoria/{year}` para
+popular datas/categorias, e `GET /rankings/tenistas?year=&date=&category=` para a tabela.
+Por padrão usa ano e data mais recentes e categorias `2M1`, `2M2`, `40M` (com `45M` opcional).
+Como o usuário ainda não pontua, o modo principal é registro manual com histórico e gráfico
+próprio da FPT (`FptRankingSnapshot` + `/api/fpt-ranking-series`), separado do ITF; a consulta
+oficial fica pronta para o futuro sem bloquear a tela. Cache próprio com TTL 24h e botão
+`Atualizar agora`, com fallback e aviso.
 
 ## Pendência conhecida — leitor da ITF
 

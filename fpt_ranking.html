@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Ranking FPT — Meu Tênis{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Ranking FPT</h1>
+  <span class="today">2ª classe • 40M/45M</span>
+</div>
+
+<div class="callout">
+  Esta seção é da <b>Federação Paulista</b> e é totalmente separada do ITF. Como você ainda não pontua no ranking oficial da FPT, o modo principal é o <b>registro manual</b> abaixo (igual ao ITF), com histórico e gráfico só da FPT. A consulta oficial fica pronta para quando você aparecer no ranking.
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Meu ranking FPT — registro manual</h2><span class="hint">histórico próprio FPT</span></div>
+  <form method="post" class="form-grid">
+    <div class="field"><label>Data</label><input type="date" name="date" value="{{ today }}"></div>
+    <div class="field"><label>Posição</label><input type="number" name="rank" min="1" placeholder="Ex.: 42" required></div>
+    <div class="field"><label>Pontos</label><input type="number" step="0.01" name="points" placeholder="opcional"></div>
+    <div class="field"><label>Categoria</label>
+      <select name="category"><option>2M1</option><option selected>2M2</option><option>40M</option><option>45M</option><option>3M1</option><option>3M2</option></select>
+    </div>
+    <div class="field wide"><label>Notas</label><input type="text" name="notes" placeholder="opcional"></div>
+    <div class="field submit"><button type="submit">Registrar posição FPT</button></div>
+  </form>
+</section>
+
+{% if snaps %}
+<section class="card chart-card">
+  <div class="card-head"><h2>Evolução no ranking FPT</h2><span class="hint">quanto mais baixo, melhor</span></div>
+  <canvas id="fptRankChart" height="90"></canvas>
+</section>
+{% endif %}
+
+<section class="card">
+  {% if snaps %}
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th></th></tr></thead>
+    <tbody>
+      {% for s in snaps %}
+      <tr>
+        <td>{{ s.date.strftime('%d/%m/%y') }}</td>
+        <td><b>#{{ s.rank }}</b></td>
+        <td>{{ '%.0f'|format(s.points) if s.points is not none else '—' }}</td>
+        <td>{{ s.category }}</td>
+        <td class="right">
+          <form method="post" action="{{ url_for('fpt_delete_snapshot', sid=s.id) }}" onsubmit="return confirm('Apagar este registro?')">
+            <button class="link-danger">apagar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <div class="empty-state">Nenhuma posição FPT registrada ainda. Registre sua primeira posição acima.</div>
+  {% endif %}
+</section>
+
+<hr style="border:none;border-top:1px solid var(--line);margin:28px 0">
+
+<div class="page-head">
+  <h1>Consulta oficial FPT</h1>
+  <form method="post" action="{{ url_for('fpt_ranking_atualizar') }}">
+    <input type="hidden" name="year" value="{{ selected_year }}">
+    <input type="hidden" name="date" value="{{ selected_date }}">
+    <input type="hidden" name="category" value="{{ selected_cat }}">
+    <button class="ghost" type="submit">Atualizar agora</button>
+  </form>
+</div>
+
+{% if ranking_warning %}
+<div class="callout" style="border-left-color: var(--loss);">{{ ranking_warning }} <a href="{{ oficial_url }}" target="_blank" rel="noopener">Ver site oficial FPT</a>.</div>
+{% endif %}
+
+<section class="card">
+  <form method="get" class="form-grid">
+    <div class="field"><label>Ano</label>
+      <select name="year">{% for y in years %}<option value="{{ y }}" {% if y==selected_year %}selected{% endif %}>{{ y }}</option>{% endfor %}</select>
+    </div>
+    <div class="field"><label>Data</label><input type="text" name="date" value="{{ selected_date }}" placeholder="timestamp ex: 1734404400"></div>
+    <div class="field"><label>Categoria</label>
+      <select name="category">{% for c in categories %}<option value="{{ c }}" {% if c==selected_cat %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    </div>
+    <div class="field submit"><button type="submit">Buscar</button></div>
+  </form>
+  <div class="hint" style="margin-top:8px">Por padrão busca ano e data mais recentes com 2M1/2M2/40M. Para 2ª classe tente <code>2M1</code> e <code>2M2</code>; para 40+ use <code>40M</code> (e <code>45M</code> como opção). O sistema guarda a última consulta em cache por 24h.</div>
+  {% if ranking_items %}
+    <div class="hint" style="margin-top:8px">{{ ranking_total }} tenistas em {{ selected_cat }} — {{ selected_year }}</div>
+  {% endif %}
+</section>
+
+<section class="card">
+  {% if ranking_items %}
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Pos</th><th>Tenista</th><th>Clube</th><th>Idade</th><th>Pontos</th></tr></thead>
+    <tbody>
+      {% for r in ranking_items %}
+      <tr>
+        <td><b>#{{ r.pos }}</b></td>
+        <td>{{ r.nome }} {% if r.codigo %}<small style="color:var(--muted)">({{ r.codigo }})</small>{% endif %}</td>
+        <td>{{ r.clube }}</td>
+        <td>{{ r.idade }}</td>
+        <td>{{ r.pontos }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <div class="empty-state">
+      Nenhum ranking oficial carregado para este filtro. Como você ainda não está no ranking, isso é esperado. Tente outra categoria (2M1 vs 2M2) ou outra data, ou use o registro manual acima. <a href="{{ oficial_url }}" target="_blank" rel="noopener">Abrir site oficial FPT</a>
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}
+{% block scripts %}
+{% if snaps %}
+<script>
+// Gráfico FPT separado do ITF
+fetch("/api/fpt-ranking-series").then(r=>r.json()).then(data=>{
+  if(!data.length) return;
+  const el=document.getElementById("fptRankChart");
+  if(!el) return;
+  new Chart(el, {
+    type:"line",
+    data:{labels:data.map(p=>{const [y,m,d]=p.date.split("-");return d+"/"+m}), datasets:[{data:data.map(p=>p.rank), borderColor:"#10243B", backgroundColor:"rgba(16,36,59,.06)", borderWidth:2.5, fill:true, tension:.3, pointBackgroundColor:"#C6F24E", pointBorderColor:"#10243B", pointRadius:4}]},
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{color:"#5E6E74", font:{size:11}}}, y:{grid:{color:"rgba(16,36,59,.08)"}, ticks:{color:"#5E6E74", font:{size:11}}, reverse:true}}}
+  });
+});
+</script>
+{% endif %}
+{% endblock %}

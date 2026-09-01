@@ -14,7 +14,8 @@ Roda **de graça** no Render.
 - **Partidas**: registra cada jogo (adversário, placar, piso, vitória/derrota, torneio ou amistoso).
 - **Treinos**: registra duração, foco (técnico, físico, tático...) e intensidade.
 - **Ranking ITF**: guarda cada posição ao longo do tempo e desenha o gráfico de evolução.
-- **Torneios**: calendário do World Tennis Masters Tour direto da ITF, com filtros por região e período, dentro do app.
+- **Torneios ITF**: calendário do World Tennis Masters Tour direto da ITF, com filtros por região e período, dentro do app.
+- **FPT — Torneios e Ranking**: bloco totalmente separado da FPT (SisFPT) com torneios abertos e ranking por classe (2ª classe, 40M/45M) com histórico próprio.
 - **PWA instalável**: instale no iPhone pelo Safari como app nativo (ícone na tela inicial, abre em tela cheia).
 - Protegido por senha (o app fica público na internet, mas só você entra).
 
@@ -65,7 +66,8 @@ Abra, digite sua senha e comece a usar.
 - Treinou? Aba **Treinos** → duração, foco, intensidade.
 - A cada atualização do ranking na ITF, aba **Ranking ITF** → registra a posição. Cada registro
   vira um ponto no gráfico de evolução do painel.
-- Procurando torneio? Aba **Torneios** traz o calendário oficial da ITF com atalhos Brasil, América do Sul e Mundo e filtro por período, além do botão Atualizar agora.
+- Procurando torneio? Aba **Torneios ITF** traz o calendário oficial da ITF com atalhos Brasil, América do Sul e Mundo e filtro por período, além do botão Atualizar agora.
+- Bloco **FPT**: `Torneios FPT` lista abertos da Federação Paulista com filtros por mês, classe e clube; `Ranking FPT` guarda seu histórico na 2ª classe/40M com gráfico próprio e permite consulta ao ranking oficial.
 
 ## Captura automática do ranking (quando seu perfil ITF existir, em 2027)
 
@@ -111,11 +113,19 @@ estrutura e as convenções do projeto, e já entende o que pode mexer. Fez uma 
 > Como agora você usa git de verdade (e não o upload manual do GitHub web), aquele problema de
 > deploy pela metade não acontece mais: cada push envia tudo de uma vez.
 
-## Torneios — de onde vem e detalhes
+## Torneios ITF — de onde vem e detalhes
 
-A lista vem direto da ITF sem navegador em produção: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=VT&dateFrom=...&dateTo=...&take=200` (ver `itf_calendar.py`). O app guarda o último resultado em cache no banco por 24 horas e só atualiza quando você abre a aba ou clica em Atualizar agora. Se a ITF estiver fora do ar, o app mostra o último cache com aviso e link pro calendário oficial.
+A lista ITF vem direto sem navegador em produção: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=VT&dateFrom=...&dateTo=...&take=200` (ver `itf_calendar.py`). O app guarda o último resultado em cache no banco por 24 horas e só atualiza quando você abre a aba ou clica em Atualizar agora. Se a ITF estiver fora do ar, o app mostra o último cache com aviso e link pro calendário oficial.
 
 Ao clicar em um torneio você vê os detalhes dentro do app (sede, endereço, diretor, bola, quadro) raspados da página pública do torneio. O Fact Sheet completo e o prazo de inscrição exigem login no Tour Zone; se configurar `ITF_TOUR_ZONE_EMAIL` e `ITF_TOUR_ZONE_PASSWORD` nas variáveis de ambiente do Render, o app indicará o acesso. O sistema também detecta mudanças entre atualizações e mostra no topo da aba e na página do torneio o que foi adicionado, removido ou alterado.
+
+## Federação Paulista — FPT (fonte independente do ITF)
+
+Bloco `FPT` totalmente separado no menu, com módulo próprio `fpt_source.py` e tabelas próprias `FptTournamentCache`, `FptRankingCache` e `FptRankingSnapshot` (histórico manual). Nunca mistura dados do ITF.
+
+Torneios FPT: `GET https://sisfpt.com.br/area-publica/torneios/abertos?code=&year=&half=&month=&name=&match=&club=` onde `match` filtra `2M1`/`2M2` (2ª classe) e `40M`/`45M` (idade) e `club` filtra clube/cidade. Se a tabela não vier de forma confiável sem JS, o app serve o último cache com aviso e link para o site oficial e reporta a limitação.
+
+Ranking FPT: `GET .../rankings/tenistas/ajax/data/{year}` e `.../ajax/categoria/{year}` para popular datas e categorias, e `GET .../rankings/tenistas?year=&date=&category=` para a tabela (ex: `2M2`, `40M`). Como você ainda não pontua, o modo principal é registro manual com histórico e gráfico próprio da FPT (separado do ITF); a consulta oficial fica pronta para o futuro.
 
 ## PWA instalável (iPhone)
 
