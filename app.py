@@ -261,14 +261,49 @@ def _filter_torneios(items, regiao="mundo", periodo="180", pais_busca=""):
 
 with app.app_context():
     db.create_all()
+    # Migração suave: adiciona colunas novas se a tabela já existia (Neon/Postgres)
+    # db.create_all() não altera colunas existentes, então verificamos e fazemos ALTER
+    try:
+        from sqlalchemy import inspect as _sa_inspect, text as _sa_text
+        insp = _sa_inspect(db.engine)
+        try:
+            cols = [c["name"] for c in insp.get_columns("profile")]
+        except Exception:
+            cols = []
+        if "password_hash" not in cols:
+            db.session.execute(_sa_text("ALTER TABLE profile ADD COLUMN password_hash TEXT"))
+            db.session.commit()
+        if "photo_b64" not in cols:
+            db.session.execute(_sa_text("ALTER TABLE profile ADD COLUMN photo_b64 TEXT"))
+            db.session.commit()
+        if "photo_mime" not in cols:
+            db.session.execute(_sa_text("ALTER TABLE profile ADD COLUMN photo_mime VARCHAR(50)"))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
+        # fallback para Postgres com IF NOT EXISTS
+        try:
+            from sqlalchemy import text as _sa_text2
+            db.session.execute(_sa_text2("ALTER TABLE profile ADD COLUMN IF NOT EXISTS password_hash TEXT"))
+            db.session.execute(_sa_text2("ALTER TABLE profile ADD COLUMN IF NOT EXISTS photo_b64 TEXT"))
+            db.session.execute(_sa_text2("ALTER TABLE profile ADD COLUMN IF NOT EXISTS photo_mime VARCHAR(50)"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     # garante linha única de perfil
-    if not Profile.query.get(1):
-        db.session.add(Profile(id=1))
-        db.session.commit()
+    try:
+        if not Profile.query.get(1):
+            db.session.add(Profile(id=1))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
     # garante cache de torneios
-    if not TournamentCache.query.get(1):
-        db.session.add(TournamentCache(id=1))
-        db.session.commit()
+    try:
+        if not TournamentCache.query.get(1):
+            db.session.add(TournamentCache(id=1))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 # ---------------------------------------------------------------------------
