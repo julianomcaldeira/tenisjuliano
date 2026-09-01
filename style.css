@@ -159,6 +159,7 @@ button.ghost,button.link-plain{font-family:inherit}
 .torneio-dates{font-size:13px;color:var(--muted);font-weight:600}
 .torneio-name{font-family:"Archivo";font-weight:800;font-size:17px;margin:0;letter-spacing:-.01em}
 .torneio-meta{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.torneio-card.changed{border-color:var(--ball);box-shadow:0 4px 16px rgba(198,242,78,.18)}
 .torneio-foot{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media(max-width:900px){ .torneios-grid{grid-template-columns:1fr} }
 

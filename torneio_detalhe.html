@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ t.tournamentName }} — Torneios{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>{{ t.tournamentName }}</h1>
+  <a class="ghost" href="{{ url_for('torneios_view') }}">← Voltar</a>
+</div>
+
+{% if detail_warning %}
+<div class="callout" style="border-left-color: var(--loss);">{{ detail_warning }}</div>
+{% endif %}
+
+<section class="card">
+  <div class="card-head"><h2>{{ t.category }} • {{ t.dates }}</h2><span class="hint">{{ t.hostNation }} ({{ t.hostNationCode }})</span></div>
+  <div class="torneio-meta" style="margin-bottom:12px">
+    <span>{{ t.location }}{% if t.venue and t.venue != t.location %} — {{ t.venue }}{% endif %}</span>
+    <span>• {{ t.surfaceDesc }} {{ t.indoorOrOutDoor }}</span>
+    <span>• {{ t.startDate[:10] }} a {{ t.endDate[:10] }}</span>
+  </div>
+  {% if t.promotionalName %}<div class="hint" style="margin-bottom:12px">{{ t.promotionalName }}</div>{% endif %}
+
+  <div class="grid-2" style="gap:16px">
+    <div>
+      <h3 style="font-family:Archivo;font-size:14px;margin:0 0 8px">Local e contato</h3>
+      <div class="hint" style="line-height:1.6">
+        {% if detail.venueName %}<b>{{ detail.venueName }}</b><br>{% endif %}
+        {% if detail.venueAddressFull %}{{ detail.venueAddressFull }}<br>
+        {% elif detail.venueAddress %}{{ detail.venueAddress }}<br>{% endif %}
+        {% if detail.venuePhone %}Tel: {{ detail.venuePhone }}<br>{% endif %}
+        {% if detail.directorName %}Diretor: {{ detail.directorName }}{% if detail.directorEmail %} — {{ detail.directorEmail }}{% endif %}<br>{% endif %}
+        {% if detail.officialBall %}Bola: {{ detail.officialBall }}<br>{% endif %}
+        Chave: {{ t.tournamentKey }}<br>
+        {% if detail.factSheetLink %}<a href="{{ detail.factSheetLink }}" target="_blank" rel="noopener">Fact Sheet</a> • {% endif %}
+        {% if detail.acceptance_list %}<a href="{{ detail.acceptance_list }}" target="_blank" rel="noopener">Acceptance List</a> • {% endif %}
+        {% if detail.draws_and_results %}<a href="{{ detail.draws_and_results }}" target="_blank" rel="noopener">Draws and Results</a> • {% endif %}
+        {% if detail.order_of_play %}<a href="{{ detail.order_of_play }}" target="_blank" rel="noopener">Order of Play</a>{% endif %}
+      </div>
+      {% if detail.factSheetRequiresLogin %}
+      <div class="callout" style="margin-top:12px">Fact Sheet completo exige login no Tour Zone. Configure <code>ITF_TOUR_ZONE_EMAIL</code> e <code>ITF_TOUR_ZONE_PASSWORD</code> nas variáveis do Render para tentar carregar automaticamente. Sem isso, use o link acima.</div>
+      {% endif %}
+    </div>
+    <div>
+      <h3 style="font-family:Archivo;font-size:14px;margin:0 0 8px">Quadro previsto</h3>
+      {% if detail.drawSizes %}
+        <ul class="feed">
+          {% for d in detail.drawSizes %}
+          <li><span class="badge train">{{ d.size }}</span><div class="feed-main"><b>{{ d.type }}</b></div></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="hint">Tamanho do quadro não informado na página pública. Consulte o Fact Sheet.</div>
+      {% endif %}
+      <div class="hint" style="margin-top:12px">Prazo de inscrição não vem no calendário público; aparece no Fact Sheet quando disponível.</div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+    <a class="ghost" href="{{ official_url }}" target="_blank" rel="noopener">Abrir na ITF</a>
+    {% if detail_fetched %}<span class="hint">Detalhes atualizados em {{ detail_fetched }}</span>{% endif %}
+  </div>
+</section>
+
+{% if changes %}
+<section class="card" style="border-left:4px solid var(--ball);">
+  <div class="card-head"><h2>O que mudou neste torneio</h2><span class="hint">{{ changes|length }} registro(s)</span></div>
+  <ul class="feed">
+    {% for c in changes %}
+    <li>
+      <span class="badge {{ 'win' if c.change_type=='added' else 'loss' if c.change_type=='removed' else 'train' }}">{{ c.change_type[0]|upper }}</span>
+      <div class="feed-main">
+        <b>{{ c.field }}</b>
+        <small>{{ c.old_value or '—' }} → {{ c.new_value or '—' }} • {{ c.detected_at.strftime('%d/%m %H:%M') }}</small>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="card">
+  <div class="card-head"><h2>Todos os dados do calendário</h2><span class="hint">fonte GetCalendar</span></div>
+  <div class="table-wrap"><table class="table">
+    <tbody>
+      <tr><th>Nome</th><td>{{ t.tournamentName }}</td></tr>
+      <tr><th>Promoção</th><td>{{ t.promotionalName or '—' }}</td></tr>
+      <tr><th>Datas</th><td>{{ t.dates }} ({{ t.startDate }} → {{ t.endDate }})</td></tr>
+      <tr><th>Local</th><td>{{ t.location }} • {{ t.hostNation }} ({{ t.hostNationCode }}) — {{ t.venue }}</td></tr>
+      <tr><th>Categoria</th><td>{{ t.category }}</td></tr>
+      <tr><th>Superfície</th><td>{{ t.surfaceDesc }} ({{ t.surfaceCode }}) — {{ t.indoorOrOutDoor }}</td></tr>
+      <tr><th>Chave</th><td><code>{{ t.tournamentKey }}</code></td></tr>
+      <tr><th>Link</th><td><a href="{{ official_url }}" target="_blank" rel="noopener">{{ official_url }}</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+{% endblock %}

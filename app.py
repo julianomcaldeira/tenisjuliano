@@ -107,6 +107,26 @@ class TournamentCache(db.Model):
     total_items = db.Column(db.Integer, default=0)
 
 
+class TournamentDetailCache(db.Model):
+    """Detalhes por torneio (página pública) — para exibir dentro do app."""
+    id = db.Column(db.Integer, primary_key=True)
+    tournament_key = db.Column(db.String(80), unique=True, nullable=False)
+    data_json = db.Column(db.Text, nullable=True)
+    fetched_at = db.Column(db.DateTime, nullable=True)
+
+
+class TournamentChange(db.Model):
+    """Histórico de mudanças detectadas entre snapshots do calendário."""
+    id = db.Column(db.Integer, primary_key=True)
+    tournament_key = db.Column(db.String(80), nullable=False)
+    tournament_name = db.Column(db.String(200), default="")
+    field = db.Column(db.String(50), nullable=False)
+    old_value = db.Column(db.Text, nullable=True)
+    new_value = db.Column(db.Text, nullable=True)
+    change_type = db.Column(db.String(20), nullable=False)  # added, removed, changed
+    detected_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 def get_profile():
     p = Profile.query.get(1)
     if not p:
@@ -183,6 +203,7 @@ def _is_cache_stale(fetched_at):
 def _fetch_and_cache_torneios(force=False):
     """
     Tenta buscar da ITF e atualizar cache. Se falhar, mantém cache antigo.
+    Detecta mudanças e grava em TournamentChange.
     Retorna (items, fetched_at, warning_msg)
     """
     items, fetched_at, total = _get_torneios_cached()
@@ -193,24 +214,66 @@ def _fetch_and_cache_torneios(force=False):
         return items, fetched_at, None
 
     try:
-        # busca próximos 6 meses — mundo
         df, dt = itf_calendar._default_date_range()
         result = itf_calendar.fetch_from_itf(date_from=df, date_to=dt, take=200)
         fresh = result["items"]
+        # detecta mudanças antes de salvar
+        try:
+            changes = itf_calendar.diff_torneios(items, fresh)
+            for ch in changes:
+                db.session.add(TournamentChange(
+                    tournament_key=ch["tournamentKey"],
+                    tournament_name=ch.get("tournamentName") or "",
+                    field=ch["field"],
+                    old_value=_json.dumps(ch["old"], ensure_ascii=False) if isinstance(ch["old"], dict) else (str(ch["old"]) if ch["old"] is not None else None),
+                    new_value=_json.dumps(ch["new"], ensure_ascii=False) if isinstance(ch["new"], dict) else (str(ch["new"]) if ch["new"] is not None else None),
+                    change_type=ch["type"],
+                ))
+            if changes:
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
         _save_torneios_cache(fresh, result.get("totalItems", len(fresh)))
         return fresh, datetime.utcnow(), None
     except Exception as e:
-        # falha: serve cache se houver
         if items:
             return items, fetched_at, f"Não foi possível atualizar da ITF agora ({e}); mostrando dados de {fetched_at.strftime('%d/%m/%Y %H:%M') if fetched_at else 'cache'}."
-        # sem cache: usa seed
         seed = _load_torneios_seed()
         seed_items = seed.get("items", [])
         if seed_items:
-            # salva seed como cache para próximas visitas
             _save_torneios_cache(seed_items, seed.get("totalItems", len(seed_items)))
             return seed_items, datetime.utcnow(), "Calendário da ITF temporariamente indisponível; mostrando dados de exemplo salvos. Tente Atualizar agora mais tarde."
         return [], None, f"Calendário indisponível e sem cache: {e}"
+
+
+def _get_recent_changes(limit=20):
+    try:
+        return TournamentChange.query.order_by(TournamentChange.detected_at.desc()).limit(limit).all()
+    except Exception:
+        return []
+
+
+def _get_detail_cached(tournament_key):
+    try:
+        row = TournamentDetailCache.query.filter_by(tournament_key=tournament_key).first()
+        if row and row.data_json:
+            return _json.loads(row.data_json), row.fetched_at
+    except Exception:
+        pass
+    return None, None
+
+
+def _save_detail_cached(tournament_key, data):
+    try:
+        row = TournamentDetailCache.query.filter_by(tournament_key=tournament_key).first()
+        if not row:
+            row = TournamentDetailCache(tournament_key=tournament_key)
+            db.session.add(row)
+        row.data_json = _json.dumps(data, ensure_ascii=False)
+        row.fetched_at = datetime.utcnow()
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def _filter_torneios(items, regiao="mundo", periodo="180", pais_busca=""):
@@ -664,13 +727,17 @@ def torneios_view():
     items, fetched_at, warning = _fetch_and_cache_torneios(force=False)
     filtrados = _filter_torneios(items, regiao=regiao, periodo=periodo, pais_busca=pais_busca)
 
-    # info de cache para rodapé
     cache_info = None
     if fetched_at:
         try:
             cache_info = fetched_at.strftime("%d/%m/%Y %H:%M UTC")
         except Exception:
             cache_info = str(fetched_at)
+
+    # mudanças recentes para aviso
+    changes = _get_recent_changes(limit=10)
+    # marca quais torneios filtrados têm mudança recente
+    changed_keys = {c.tournament_key for c in changes}
 
     return render_template(
         "torneios.html",
@@ -683,6 +750,8 @@ def torneios_view():
         fetched_at=cache_info,
         warning=warning,
         official_url=itf_calendar.ITF_CALENDAR_OFFICIAL_URL,
+        changes=changes,
+        changed_keys=changed_keys,
     )
 
 
@@ -695,12 +764,68 @@ def torneios_atualizar():
     elif warning:
         flash(warning)
     else:
-        flash(f"Calendário atualizado: {len(items)} torneios.")
-    # mantém filtros atuais
+        # mostra resumo de mudanças
+        recent = _get_recent_changes(limit=5)
+        if recent:
+            flash(f"Calendário atualizado: {len(items)} torneios. {len(recent)} mudança(s) detectada(s).")
+        else:
+            flash(f"Calendário atualizado: {len(items)} torneios. Nenhuma mudança relevante.")
     regiao = request.form.get("regiao") or request.args.get("regiao") or "mundo"
     periodo = request.form.get("periodo") or request.args.get("periodo") or "180"
     pais = request.form.get("pais") or request.args.get("pais") or ""
     return redirect(url_for("torneios_view", regiao=regiao, periodo=periodo, pais=pais))
+
+
+@app.route("/torneios/<path:tournament_key>", methods=["GET"])
+@login_required
+def torneio_detalhe(tournament_key):
+    # tournament_key vem como S-MT200-BRA-2026-005 — precisa reconstruir
+    # Busca no cache principal
+    items, fetched_at, _ = _get_torneios_cached()
+    torneio = next((x for x in items if x.get("tournamentKey") == tournament_key), None)
+    if not torneio:
+        # tenta buscar sem cache (seed)
+        seed = _load_torneios_seed()
+        torneio = next((x for x in seed.get("items", []) if x.get("tournamentKey") == tournament_key), None)
+    if not torneio:
+        flash("Torneio não encontrado no cache.")
+        return redirect(url_for("torneios_view"))
+
+    # detalhe enriquecido: tenta cache, senão busca HTML público
+    detail, detail_fetched = _get_detail_cached(tournament_key)
+    detail_warning = None
+    if not detail:
+        link = torneio.get("tournamentLink")
+        if link:
+            try:
+                detail = itf_calendar.fetch_tournament_detail(link)
+                _save_detail_cached(tournament_key, detail)
+                detail_fetched = datetime.utcnow()
+            except Exception as e:
+                detail_warning = f"Não foi possível carregar detalhes extras da ITF agora ({e}). Mostrando dados do calendário."
+                detail = {}
+        else:
+            detail = {}
+
+    # mudanças específicas deste torneio
+    try:
+        changes = TournamentChange.query.filter_by(tournament_key=tournament_key).order_by(TournamentChange.detected_at.desc()).limit(10).all()
+    except Exception:
+        changes = []
+
+    # fact sheet auth hint
+    fact_auth = itf_calendar.fetch_fact_sheet_if_authed(torneio.get("tournamentLink"))
+
+    return render_template(
+        "torneio_detalhe.html",
+        t=torneio,
+        detail=detail or {},
+        detail_fetched=detail_fetched.strftime("%d/%m/%Y %H:%M UTC") if detail_fetched else None,
+        detail_warning=detail_warning,
+        changes=changes,
+        official_url="https://www.itftennis.com" + (torneio.get("tournamentLink") or ""),
+        fact_auth=fact_auth,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -110,9 +110,11 @@ estrutura e as convenções do projeto, e já entende o que pode mexer. Fez uma 
 > Como agora você usa git de verdade (e não o upload manual do GitHub web), aquele problema de
 > deploy pela metade não acontece mais: cada push envia tudo de uma vez.
 
-## Torneios — de onde vem
+## Torneios — de onde vem e detalhes
 
 A lista vem direto da ITF sem navegador em produção: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar?circuitCode=VT&dateFrom=...&dateTo=...&take=200` (ver `itf_calendar.py`). O app guarda o último resultado em cache no banco por 24 horas e só atualiza quando você abre a aba ou clica em Atualizar agora. Se a ITF estiver fora do ar, o app mostra o último cache com aviso e link pro calendário oficial.
+
+Ao clicar em um torneio você vê os detalhes dentro do app (sede, endereço, diretor, bola, quadro) raspados da página pública do torneio. O Fact Sheet completo e o prazo de inscrição exigem login no Tour Zone; se configurar `ITF_TOUR_ZONE_EMAIL` e `ITF_TOUR_ZONE_PASSWORD` nas variáveis de ambiente do Render, o app indicará o acesso. O sistema também detecta mudanças entre atualizações e mostra no topo da aba e na página do torneio o que foi adicionado, removido ou alterado.
 
 ## Arquivos
 

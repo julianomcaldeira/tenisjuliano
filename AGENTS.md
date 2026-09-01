@@ -67,15 +67,22 @@ Fonte: `GET https://www.itftennis.com/tennis/api/TournamentApi/GetCalendar` com 
 com campos `tournamentName`, `dates`, `location/venue`, `category` (MT100 a MT1000),
 `surfaceDesc`, `hostNation/hostNationCode`, `startDate/endDate`, `tournamentLink`.
 
-Cache: tabela `TournamentCache` (id 1) guarda último JSON + `fetched_at`. Ao abrir a aba,
-se o cache tem mais de 24h (`CACHE_TTL_HOURS`), busca da ITF e atualiza; senão serve cache.
-Botão `Atualizar agora` força busca. Se a busca falhar (Incapsula/HTML ou timeout), serve
-último cache com aviso discreto e link pro calendário oficial; sem cache, mostra mensagem
-amigável e link. Seed em `torneios_seed.json` garante primeira visita mesmo offline.
-Filtros na tela: região (Brasil, América do Sul, Mundo) e período (próximos torneios por
-padrão). Por torneio: nome, datas, cidade/país, categoria/grade, superfície, prazo de
-inscrição (não vem no endpoint, então exibe aviso), link pro torneio. Cada torneio tem
-várias faixas etárias; não filtrar por idade.
+Detalhe: `GET https://www.itftennis.com/en/tournament/<slug>/<key>/` é raspado com
+`BeautifulSoup` em `itf_calendar.fetch_tournament_detail()` para exibir dentro do app
+sede, endereço, telefone, diretor, bola oficial, tamanho do quadro e links para
+Fact Sheet/Acceptance List. Fact Sheet completo exige login no Tour Zone; se
+`ITF_TOUR_ZONE_EMAIL`/`ITF_TOUR_ZONE_PASSWORD` estiverem definidos (env vars no Render,
+nunca no código), o app indica que requer login e guarda hook para futura autenticacao.
+
+Cache: `TournamentCache` (id 1) guarda último JSON + `fetched_at`. `TournamentDetailCache`
+guarda detalhes por `tournamentKey`. Ao abrir a aba, se o cache tem mais de 24h
+(`CACHE_TTL_HOURS`), busca da ITF e atualiza; senão serve cache. Botão `Atualizar agora`
+força busca. Se a busca falhar (Incapsula/HTML ou timeout), serve último cache com aviso
+discreto e link pro calendário oficial; sem cache, usa `torneios_seed.json`. Filtros:
+região (Brasil, América do Sul, Mundo) e período (próximos torneios por padrão).
+Histórico: `TournamentChange` registra diff entre snapshots (`added`, `removed`, `changed`
+por campo em `TRACKED_FIELDS`) e a lista é mostrada no topo da aba e na página de detalhe
+`torneio_detalhe.html`. Cada torneio Masters tem várias faixas etárias; não filtrar por idade.
 
 ## Pendência conhecida — leitor da ITF
 

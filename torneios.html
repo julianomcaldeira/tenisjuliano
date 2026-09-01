@@ -18,6 +18,28 @@
 </div>
 {% endif %}
 
+{% if changes %}
+<section class="card" style="border-left:4px solid var(--ball);">
+  <div class="card-head"><h2>O que mudou</h2><span class="hint">{{ changes|length }} alteração(ões) recente(s)</span></div>
+  <ul class="feed">
+    {% for c in changes %}
+    <li>
+      <span class="badge {{ 'win' if c.change_type=='added' else 'loss' if c.change_type=='removed' else 'train' }}">{{ c.change_type[0]|upper }}</span>
+      <div class="feed-main">
+        <b>{{ c.tournament_name }} <small style="color:var(--muted)">({{ c.tournament_key }})</small></b>
+        <small>
+          {% if c.change_type=='added' %}Novo torneio adicionado
+          {% elif c.change_type=='removed' %}Torneio removido
+          {% else %}{{ c.field }}: {{ c.old_value or '—' }} → {{ c.new_value or '—' }}{% endif %}
+          • {{ c.detected_at.strftime('%d/%m %H:%M') }}
+        </small>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 <section class="card">
   <form method="get" class="form-grid" style="grid-template-columns: auto auto auto 1fr auto; align-items: end;">
     <div class="field">
@@ -52,20 +74,21 @@
 {% if torneios %}
 <div class="torneios-grid">
   {% for t in torneios %}
-  <article class="card torneio-card">
+  <article class="card torneio-card {% if t.tournamentKey in changed_keys %}changed{% endif %}">
     <div class="torneio-head">
       <span class="torneio-cat">{{ t.category }}</span>
       <span class="torneio-dates">{{ t.dates }}</span>
+      {% if t.tournamentKey in changed_keys %}<span class="origin itf">Atualizado</span>{% endif %}
     </div>
-    <h3 class="torneio-name">{{ t.tournamentName }}</h3>
+    <h3 class="torneio-name"><a href="{{ url_for('torneio_detalhe', tournament_key=t.tournamentKey) }}" style="text-decoration:none;color:inherit">{{ t.tournamentName }}</a></h3>
     {% if t.promotionalName and t.promotionalName != t.tournamentName %}<div class="hint" style="margin-top:2px">{{ t.promotionalName }}</div>{% endif %}
     <div class="torneio-meta">
       <span>{{ t.location }}{% if t.hostNation %} • {{ t.hostNation }} ({{ t.hostNationCode }}){% endif %}</span>
       {% if t.surfaceDesc %}<span>• {{ t.surfaceDesc }}{% if t.indoorOrOutDoor %} {{ t.indoorOrOutDoor }}{% endif %}</span>{% endif %}
     </div>
     <div class="torneio-foot">
-      <span class="hint">Prazo de inscrição: não informado pela ITF neste calendário</span>
-      {% if t.tournamentLink %}<a class="more" href="https://www.itftennis.com{{ t.tournamentLink }}" target="_blank" rel="noopener">Ver no site da ITF →</a>{% endif %}
+      <span class="hint">Prazo: não informado neste calendário — ver detalhes</span>
+      <a class="more" href="{{ url_for('torneio_detalhe', tournament_key=t.tournamentKey) }}">Ver detalhes →</a>
     </div>
   </article>
   {% endfor %}
