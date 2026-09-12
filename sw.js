@@ -1,5 +1,5 @@
 /* sw.js — Meu Tênis PWA — app shell cache + offline */
-const CACHE = "meu-tenis-v3";
+const CACHE = "meu-tenis-v5";
 const SHELL = [
   "/style.css",
   "/app.js",
@@ -71,26 +71,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Estáticos: cache-first
+  // Estáticos: network-first (sempre busca nova versão quando online)
   if (isStaticAsset(req.url)) {
     event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) {
-          // revalida em segundo plano
-          event.waitUntil(fetch(req).then((resp) => {
-            if (resp.ok) caches.open(CACHE).then((c) => c.put(req, resp));
-          }).catch(()=>{}));
-          return cached;
+      fetch(req, { cache: "no-store" }).then((resp) => {
+        if (resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE).then((c) => c.put(req, clone));
         }
-        return fetch(req).then((resp) => {
-          if (resp.ok) {
-            const clone = resp.clone();
-            caches.open(CACHE).then((c) => c.put(req, clone));
-          }
-          return resp;
-        }).catch(() => {
-          return new Response("", { status: 504 });
-        });
+        return resp;
+      }).catch(() => {
+        return caches.match(req).then((cached) => cached || new Response("", { status: 504 }));
       })
     );
     return;
