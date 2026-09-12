@@ -96,6 +96,15 @@ python app.py
 # abre http://localhost:5000
 ```
 
+## Uso no celular (mobile-first)
+
+No iPhone/Android o app usa **barra inferior fixa** (Painel, Partidas, Treinos,
+Torneios + **Mais**) — feita para o polegar, com uma mão. O botão **Mais** abre o
+menu completo agrupado (ITF, FPT, Perfil, Sair). Tabelas viram cards empilhados,
+formulários ficam em coluna única com botão largo, e gráficos têm altura própria
+para leitura. Sem rolagem horizontal em largura ~390px. No computador, a navegação
+lateral continua igual.
+
 ## Editar depois com o opencode
 
 O projeto já vem com o git iniciado e um primeiro commit feito. Para colocar no GitHub e

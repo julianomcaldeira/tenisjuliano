@@ -51,7 +51,7 @@
 <section class="card">
   <div class="card-head"><h2>Trocar senha</h2>{% if has_custom_password %}<span class="hint">senha personalizada ativa</span>{% else %}<span class="hint">usando APP_PASSWORD do Render</span>{% endif %}</div>
   <p class="hint" style="margin:0 0 14px">Altere a senha de acesso ao sistema. Ela é guardada com hash no banco e passa a valer em vez da variável <code>APP_PASSWORD</code>. Se não trocar, continua valendo a do Render.</p>
-  <form method="post" class="form-grid" style="grid-template-columns:1fr 1fr">
+  <form method="post" class="form-grid form-grid-2">
     <input type="hidden" name="action" value="trocar_senha">
     <div class="field">
       <label for="senha_atual">Senha atual</label>

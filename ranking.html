@@ -18,13 +18,13 @@
 
 <section class="card form-card">
   <form method="post" class="form-grid">
-    <div class="field"><label>Data</label><input type="date" name="date" value="{{ today }}"></div>
-    <div class="field"><label>Posição</label><input type="number" name="rank" min="1" placeholder="Ex.: 1240" required></div>
-    <div class="field"><label>Pontos</label><input type="number" step="0.01" name="points" placeholder="opcional"></div>
-    <div class="field"><label>Categoria</label>
-      <select name="category"><option>45+</option><option>40+</option><option>50+</option><option>35+</option><option>55+</option></select>
+    <div class="field"><label for="r-date">Data</label><input id="r-date" type="date" name="date" value="{{ today }}"></div>
+    <div class="field"><label for="r-rank">Posição</label><input id="r-rank" type="number" inputmode="numeric" name="rank" min="1" placeholder="Ex.: 1240" required></div>
+    <div class="field"><label for="r-points">Pontos</label><input id="r-points" type="number" inputmode="decimal" step="0.01" name="points" placeholder="opcional"></div>
+    <div class="field"><label for="r-cat">Categoria</label>
+      <select id="r-cat" name="category"><option>45+</option><option>40+</option><option>50+</option><option>35+</option><option>55+</option></select>
     </div>
-    <div class="field wide"><label>Notas</label><input type="text" name="notes" placeholder="opcional"></div>
+    <div class="field wide"><label for="r-notes">Notas</label><input id="r-notes" type="text" name="notes" placeholder="opcional" autocomplete="off"></div>
     <div class="field submit"><button type="submit">Registrar posição</button></div>
   </form>
 </section>
@@ -32,17 +32,17 @@
 <section class="card">
   {% if snaps %}
   <div class="table-wrap">
-  <table class="table">
-    <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th>Origem</th><th></th></tr></thead>
+  <table class="table table-cards">
+    <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th>Origem</th><th><span class="sr-only">Ações</span></th></tr></thead>
     <tbody>
       {% for s in snaps %}
       <tr>
-        <td>{{ s.date.strftime('%d/%m/%y') }}</td>
-        <td><b>#{{ s.rank }}</b></td>
-        <td>{{ '%.0f'|format(s.points) if s.points is not none else '—' }}</td>
-        <td>{{ s.category }}</td>
-        <td><span class="origin {{ s.source }}">{{ 'ITF' if s.source=='itf' else 'manual' }}</span></td>
-        <td class="right">
+        <td data-label="Data">{{ s.date.strftime('%d/%m/%y') }}</td>
+        <td data-label="Posição"><b>#{{ s.rank }}</b></td>
+        <td data-label="Pontos">{{ '%.0f'|format(s.points) if s.points is not none else '—' }}</td>
+        <td data-label="Categoria">{{ s.category }}</td>
+        <td data-label="Origem"><span class="origin {{ s.source }}">{{ 'ITF' if s.source=='itf' else 'manual' }}</span></td>
+        <td data-label="Ações" class="right row-actions">
           <form method="post" action="{{ url_for('delete_snapshot', sid=s.id) }}" onsubmit="return confirm('Apagar este registro?')">
             <button class="link-danger">apagar</button>
           </form>

@@ -14,9 +14,9 @@
 <section class="card">
   <div class="card-head"><h2>Meu ranking FPT — registro manual</h2><span class="hint">histórico próprio FPT</span></div>
   <form method="post" class="form-grid">
-    <div class="field"><label>Data</label><input type="date" name="date" value="{{ today }}"></div>
-    <div class="field"><label>Posição</label><input type="number" name="rank" min="1" placeholder="Ex.: 42" required></div>
-    <div class="field"><label>Pontos</label><input type="number" step="0.01" name="points" placeholder="opcional"></div>
+    <div class="field"><label for="fpt-date">Data</label><input id="fpt-date" type="date" name="date" value="{{ today }}"></div>
+    <div class="field"><label for="fpt-rank">Posição</label><input id="fpt-rank" type="number" inputmode="numeric" name="rank" min="1" placeholder="Ex.: 42" required></div>
+    <div class="field"><label for="fpt-points">Pontos</label><input id="fpt-points" type="number" inputmode="decimal" step="0.01" name="points" placeholder="opcional"></div>
     <div class="field"><label>Categoria</label>
       <select name="category"><option>2M1</option><option selected>2M2</option><option>40M</option><option>45M</option><option>3M1</option><option>3M2</option></select>
     </div>
@@ -28,23 +28,23 @@
 {% if snaps %}
 <section class="card chart-card">
   <div class="card-head"><h2>Evolução no ranking FPT</h2><span class="hint">quanto mais baixo, melhor</span></div>
-  <canvas id="fptRankChart" height="90"></canvas>
+  <div class="chart-wrap chart-wrap-sm"><canvas id="fptRankChart"></canvas></div>
 </section>
 {% endif %}
 
 <section class="card">
   {% if snaps %}
   <div class="table-wrap">
-  <table class="table">
-    <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th></th></tr></thead>
+  <table class="table table-cards">
+    <thead><tr><th>Data</th><th>Posição</th><th>Pontos</th><th>Categoria</th><th><span class="sr-only">Ações</span></th></tr></thead>
     <tbody>
       {% for s in snaps %}
       <tr>
-        <td>{{ s.date.strftime('%d/%m/%y') }}</td>
-        <td><b>#{{ s.rank }}</b></td>
-        <td>{{ '%.0f'|format(s.points) if s.points is not none else '—' }}</td>
-        <td>{{ s.category }}</td>
-        <td class="right">
+        <td data-label="Data">{{ s.date.strftime('%d/%m/%y') }}</td>
+        <td data-label="Posição"><b>#{{ s.rank }}</b></td>
+        <td data-label="Pontos">{{ '%.0f'|format(s.points) if s.points is not none else '—' }}</td>
+        <td data-label="Categoria">{{ s.category }}</td>
+        <td data-label="Ações" class="right row-actions">
           <form method="post" action="{{ url_for('fpt_delete_snapshot', sid=s.id) }}" onsubmit="return confirm('Apagar este registro?')">
             <button class="link-danger">apagar</button>
           </form>
@@ -95,16 +95,16 @@
 <section class="card">
   {% if ranking_items %}
   <div class="table-wrap">
-  <table class="table">
+  <table class="table table-cards">
     <thead><tr><th>Pos</th><th>Tenista</th><th>Clube</th><th>Idade</th><th>Pontos</th></tr></thead>
     <tbody>
       {% for r in ranking_items %}
       <tr>
-        <td><b>#{{ r.pos }}</b></td>
-        <td>{{ r.nome }} {% if r.codigo %}<small style="color:var(--muted)">({{ r.codigo }})</small>{% endif %}</td>
-        <td>{{ r.clube }}</td>
-        <td>{{ r.idade }}</td>
-        <td>{{ r.pontos }}</td>
+        <td data-label="Pos"><b>#{{ r.pos }}</b></td>
+        <td data-label="Tenista">{{ r.nome }} {% if r.codigo %}<small style="color:var(--muted)">({{ r.codigo }})</small>{% endif %}</td>
+        <td data-label="Clube">{{ r.clube }}</td>
+        <td data-label="Idade">{{ r.idade }}</td>
+        <td data-label="Pontos">{{ r.pontos }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -129,7 +129,7 @@ fetch("/api/fpt-ranking-series").then(r=>r.json()).then(data=>{
   new Chart(el, {
     type:"line",
     data:{labels:data.map(p=>{const [y,m,d]=p.date.split("-");return d+"/"+m}), datasets:[{data:data.map(p=>p.rank), borderColor:"#10243B", backgroundColor:"rgba(16,36,59,.06)", borderWidth:2.5, fill:true, tension:.3, pointBackgroundColor:"#C6F24E", pointBorderColor:"#10243B", pointRadius:4}]},
-    options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{color:"#5E6E74", font:{size:11}}}, y:{grid:{color:"rgba(16,36,59,.08)"}, ticks:{color:"#5E6E74", font:{size:11}}, reverse:true}}}
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{color:"#5E6E74", font:{size:11}}}, y:{grid:{color:"rgba(16,36,59,.08)"}, ticks:{color:"#5E6E74", font:{size:11}}, reverse:true}}}
   });
 });
 </script>

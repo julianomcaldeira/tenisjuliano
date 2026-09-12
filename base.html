@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}Meu Tênis{% endblock %}</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#10243B">
@@ -17,8 +17,16 @@
 </head>
 <body>
 {% if session.get('auth') %}
+<header class="topbar" role="banner">
+  <a class="topbar-brand" href="{{ url_for('dashboard') }}" aria-label="JMC Tênis — Painel">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="topbar-name">JMC Tênis</span>
+  </a>
+  <span class="topbar-sub">Juliano • 45+</span>
+</header>
+
 <div class="shell">
-  <aside class="nav">
+  <aside class="nav" aria-label="Navegação principal">
     <div class="brand">
       <span class="dot"></span>
       <div class="brand-text">
@@ -30,25 +38,71 @@
       <a href="{{ url_for('dashboard') }}" class="{{ 'on' if request.endpoint=='dashboard' }}">Painel</a>
       <a href="{{ url_for('matches_view') }}" class="{{ 'on' if request.endpoint=='matches_view' }}">Partidas</a>
       <a href="{{ url_for('trainings_view') }}" class="{{ 'on' if request.endpoint=='trainings_view' }}">Treinos</a>
-      {# <a href="{{ url_for('ranking_view') }}" class="{{ 'on' if request.endpoint=='ranking_view' }}">Ranking ITF</a> #}
-      <a href="{{ url_for('torneios_view') }}" class="{{ 'on' if request.endpoint=='torneios_view' }}">Torneios ITF</a>
+      <a href="{{ url_for('torneios_view') }}" class="{{ 'on' if request.endpoint in ['torneios_view','torneio_detalhe'] }}">Torneios ITF</a>
+      <a href="{{ url_for('ranking_view') }}" class="{{ 'on' if request.endpoint in ['ranking_view'] }}">Ranking ITF</a>
       <div class="nav-group">FPT</div>
       <a href="{{ url_for('fpt_torneios_view') }}" class="{{ 'on' if request.endpoint in ['fpt_torneios_view'] }}">Torneios FPT</a>
-      {# <a href="{{ url_for('fpt_ranking_view') }}" class="{{ 'on' if request.endpoint in ['fpt_ranking_view','fpt_ranking_atualizar'] }}">Ranking FPT</a> #}
+      <a href="{{ url_for('fpt_ranking_view') }}" class="{{ 'on' if request.endpoint in ['fpt_ranking_view','fpt_ranking_atualizar'] }}">Ranking FPT</a>
       <a href="{{ url_for('perfil_view') }}" class="{{ 'on' if request.endpoint=='perfil_view' }}">Perfil</a>
     </nav>
     <a class="logout" href="{{ url_for('logout') }}">Sair</a>
   </aside>
 
-  <main class="content">
+  <main class="content" id="conteudo">
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-        <div class="flash">{{ messages[0] }}</div>
+        <div class="flash" role="status">{{ messages[0] }}</div>
       {% endif %}
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
 </div>
+
+<div class="scrim" id="scrim" hidden></div>
+<section class="sheet" id="moreSheet" aria-label="Mais destinos" aria-hidden="true">
+  <div class="sheet-handle" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <strong>Menu</strong>
+    <button type="button" class="sheet-close" id="sheetClose" aria-label="Fechar menu">Fechar</button>
+  </div>
+  <nav class="sheet-nav">
+    <a href="{{ url_for('dashboard') }}" class="{{ 'on' if request.endpoint=='dashboard' }}">Painel</a>
+    <a href="{{ url_for('matches_view') }}" class="{{ 'on' if request.endpoint=='matches_view' }}">Partidas</a>
+    <a href="{{ url_for('trainings_view') }}" class="{{ 'on' if request.endpoint=='trainings_view' }}">Treinos</a>
+    <div class="sheet-group">ITF</div>
+    <a href="{{ url_for('torneios_view') }}" class="{{ 'on' if request.endpoint in ['torneios_view','torneio_detalhe'] }}">Torneios ITF</a>
+    <a href="{{ url_for('ranking_view') }}" class="{{ 'on' if request.endpoint in ['ranking_view'] }}">Ranking ITF</a>
+    <div class="sheet-group">FPT</div>
+    <a href="{{ url_for('fpt_torneios_view') }}" class="{{ 'on' if request.endpoint in ['fpt_torneios_view'] }}">Torneios FPT</a>
+    <a href="{{ url_for('fpt_ranking_view') }}" class="{{ 'on' if request.endpoint in ['fpt_ranking_view','fpt_ranking_atualizar'] }}">Ranking FPT</a>
+    <div class="sheet-group">Conta</div>
+    <a href="{{ url_for('perfil_view') }}" class="{{ 'on' if request.endpoint=='perfil_view' }}">Perfil</a>
+    <a href="{{ url_for('logout') }}">Sair</a>
+  </nav>
+</section>
+
+<nav class="tabbar" aria-label="Navegação rápida">
+  <a href="{{ url_for('dashboard') }}" class="tab {{ 'on' if request.endpoint=='dashboard' }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <span>Painel</span>
+  </a>
+  <a href="{{ url_for('matches_view') }}" class="tab {{ 'on' if request.endpoint=='matches_view' }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 5.5c4 3.5 4 9.5 0 13M17.5 5.5c-4 3.5-4 9.5 0 13" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    <span>Partidas</span>
+  </a>
+  <a href="{{ url_for('trainings_view') }}" class="tab {{ 'on' if request.endpoint=='trainings_view' }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7v10M17.5 7v10M4 9.5v5M20 9.5v5M6.5 12h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <span>Treinos</span>
+  </a>
+  <a href="{{ url_for('torneios_view') }}" class="tab {{ 'on' if request.endpoint in ['torneios_view','torneio_detalhe','fpt_torneios_view'] }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v3a5 5 0 0 1-10 0V4Z M7 5H4.5v2.5A3.5 3.5 0 0 0 8 11M17 5h2.5v2.5A3.5 3.5 0 0 1 16 11M12 12v7M8.5 20h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Torneios</span>
+  </a>
+  <button type="button" class="tab" id="moreTab" aria-haspopup="dialog" aria-controls="moreSheet">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="18.5" cy="12" r="1.7" fill="currentColor"/></svg>
+    <span>Mais</span>
+  </button>
+</nav>
 {% else %}
   {% block auth %}{% endblock %}
 {% endif %}

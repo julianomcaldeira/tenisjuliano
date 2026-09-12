@@ -80,16 +80,16 @@
 
 <section class="card">
   <div class="card-head"><h2>Todos os dados do calendário</h2><span class="hint">fonte GetCalendar</span></div>
-  <div class="table-wrap"><table class="table">
+  <div class="table-wrap"><table class="table table-cards kv-table">
     <tbody>
-      <tr><th>Nome</th><td>{{ t.tournamentName }}</td></tr>
-      <tr><th>Promoção</th><td>{{ t.promotionalName or '—' }}</td></tr>
-      <tr><th>Datas</th><td>{{ t.dates }} ({{ t.startDate }} → {{ t.endDate }})</td></tr>
-      <tr><th>Local</th><td>{{ t.location }} • {{ t.hostNation }} ({{ t.hostNationCode }}) — {{ t.venue }}</td></tr>
-      <tr><th>Categoria</th><td>{{ t.category }}</td></tr>
-      <tr><th>Superfície</th><td>{{ t.surfaceDesc }} ({{ t.surfaceCode }}) — {{ t.indoorOrOutDoor }}</td></tr>
-      <tr><th>Chave</th><td><code>{{ t.tournamentKey }}</code></td></tr>
-      <tr><th>Link</th><td><a href="{{ official_url }}" target="_blank" rel="noopener">{{ official_url }}</a></td></tr>
+      <tr><th scope="row">Nome</th><td data-label="Nome">{{ t.tournamentName }}</td></tr>
+      <tr><th scope="row">Promoção</th><td data-label="Promoção">{{ t.promotionalName or '—' }}</td></tr>
+      <tr><th scope="row">Datas</th><td data-label="Datas">{{ t.dates }} ({{ t.startDate }} → {{ t.endDate }})</td></tr>
+      <tr><th scope="row">Local</th><td data-label="Local">{{ t.location }} • {{ t.hostNation }} ({{ t.hostNationCode }}) — {{ t.venue }}</td></tr>
+      <tr><th scope="row">Categoria</th><td data-label="Categoria">{{ t.category }}</td></tr>
+      <tr><th scope="row">Superfície</th><td data-label="Superfície">{{ t.surfaceDesc }} ({{ t.surfaceCode }}) — {{ t.indoorOrOutDoor }}</td></tr>
+      <tr><th scope="row">Chave</th><td data-label="Chave"><code class="key-code">{{ t.tournamentKey }}</code></td></tr>
+      <tr><th scope="row">Link</th><td data-label="Link"><a class="break-all" href="{{ official_url }}" target="_blank" rel="noopener">{{ official_url }}</a></td></tr>
     </tbody>
   </table></div>
 </section>

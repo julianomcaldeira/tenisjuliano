@@ -1,5 +1,5 @@
 /* sw.js — Meu Tênis PWA — app shell cache + offline */
-const CACHE = "meu-tenis-v2";
+const CACHE = "meu-tenis-v3";
 const SHELL = [
   "/style.css",
   "/app.js",
@@ -28,7 +28,7 @@ self.addEventListener("activate", (event) => {
 function isDataPage(url) {
   const path = new URL(url).pathname;
   // Páginas autenticadas com dados dinâmicos: network-first
-  return ["/", "/partidas", "/treinos", "/ranking", "/torneios", "/perfil", "/login", "/logout"].some((p) => path === p || path.startsWith("/torneios/") || path.startsWith("/api/"));
+  return ["/", "/partidas", "/treinos", "/ranking", "/torneios", "/perfil", "/login", "/logout", "/fpt/torneios", "/fpt/ranking"].some((p) => path === p || path.startsWith("/torneios/") || path.startsWith("/fpt/") || path.startsWith("/api/"));
 }
 
 function isStaticAsset(url) {

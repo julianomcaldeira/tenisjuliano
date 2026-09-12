@@ -12,9 +12,10 @@ function brDate(iso) {
 
 const baseOpts = {
   responsive: true,
+  maintainAspectRatio: false,
   plugins: { legend: { display: false } },
   scales: {
-    x: { grid: { display: false }, ticks: { color: "#5E6E74", font: { size: 11 } } },
+    x: { grid: { display: false }, ticks: { color: "#5E6E74", font: { size: 11 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 } },
     y: { grid: { color: GRID }, ticks: { color: "#5E6E74", font: { size: 11 } } },
   },
 };
@@ -85,8 +86,49 @@ async function drawTraining() {
 }
 
 function initDashboard(hasRanking) {
+  if (window.Chart && Chart.defaults) {
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+  }
   if (hasRanking) drawRank();
   drawMatches();
   drawTraining();
 }
 window.initDashboard = initDashboard;
+
+/* Menu mobile: tab "Mais" abre bottom-sheet; só visual, sem rotas. */
+(function () {
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    if (window.Chart && Chart.defaults) Chart.defaults.maintainAspectRatio = false;
+    var sheet = document.getElementById("moreSheet");
+    var scrim = document.getElementById("scrim");
+    var openBtn = document.getElementById("moreTab");
+    var closeBtn = document.getElementById("sheetClose");
+    if (!sheet || !openBtn) return;
+    function open() {
+      sheet.classList.add("open");
+      sheet.setAttribute("aria-hidden", "false");
+      if (scrim) scrim.hidden = false;
+      document.body.style.overflow = "hidden";
+      openBtn.classList.add("on");
+    }
+    function close() {
+      sheet.classList.remove("open");
+      sheet.setAttribute("aria-hidden", "true");
+      if (scrim) scrim.hidden = true;
+      document.body.style.overflow = "";
+      openBtn.classList.remove("on");
+      openBtn.focus({ preventScroll: true });
+    }
+    var isOpen = function () { return sheet.classList.contains("open"); };
+    openBtn.addEventListener("click", function () { isOpen() ? close() : open(); });
+    if (closeBtn) closeBtn.addEventListener("click", close);
+    if (scrim) scrim.addEventListener("click", close);
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen()) close(); });
+    sheet.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", close); });
+  });
+})();

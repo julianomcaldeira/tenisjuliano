@@ -128,6 +128,21 @@ fallback offline) e `base.html` com `link rel=manifest`, `theme-color` e tags
 `serviceWorker` existir (iOS/Safari) e não cacheia POST de login. Para (re)gerar ícones:
 `python3 /tmp/gen_icons.py` (gera PNGs quadrados navy/bola) e referencie no manifest.
 
+## Layout / responsivo (mobile-first, só visual)
+
+Padrão mobile (≤820px): **tab bar inferior fixa** com 4 destinos (Painel, Partidas,
+Treinos, Torneios) + botão **Mais** que abre um **bottom-sheet** com tudo agrupado
+(ITF, FPT, Perfil, Sair) + **topbar fixa** com nome do app. Desktop (≥821px) mantém a
+sidebar lateral — `.topbar/.tabbar/.sheet/.scrim` ficam com `display:none`.
+Regras centrais em `style.css` (bloco "Revisão mobile-first"): safe-area iPhone
+(`viewport-fit=cover` + `env(safe-area-inset-*)`), sem scroll-X (`overflow-x:hidden`),
+toque ≥44px, inputs ≥16px (sem zoom iOS), tabelas `.table-cards` viram cards empilhados
+via `data-label` no mobile (tabela normal no desktop), forms `.form-grid` em coluna
+única, gráficos em `.chart-wrap` (altura fixa 230–250px, `maintainAspectRatio:false`),
+torneios em coluna única com `.seg` rolável por snap. PWA preservado (`manifest`,
+`sw.js` com cache `meu-tenis-v3`, tags iOS em `base.html`). Nunca mude rotas/dados
+nessa camada.
+
 ## Deploy (produção)
 
 Push na branch principal do GitHub dispara deploy automático no Render (via `render.yaml`).
