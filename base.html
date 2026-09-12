@@ -39,10 +39,8 @@
       <a href="{{ url_for('matches_view') }}" class="{{ 'on' if request.endpoint=='matches_view' }}">Partidas</a>
       <a href="{{ url_for('trainings_view') }}" class="{{ 'on' if request.endpoint=='trainings_view' }}">Treinos</a>
       <a href="{{ url_for('torneios_view') }}" class="{{ 'on' if request.endpoint in ['torneios_view','torneio_detalhe'] }}">Torneios ITF</a>
-      <a href="{{ url_for('ranking_view') }}" class="{{ 'on' if request.endpoint in ['ranking_view'] }}">Ranking ITF</a>
       <div class="nav-group">FPT</div>
       <a href="{{ url_for('fpt_torneios_view') }}" class="{{ 'on' if request.endpoint in ['fpt_torneios_view'] }}">Torneios FPT</a>
-      <a href="{{ url_for('fpt_ranking_view') }}" class="{{ 'on' if request.endpoint in ['fpt_ranking_view','fpt_ranking_atualizar'] }}">Ranking FPT</a>
       <a href="{{ url_for('perfil_view') }}" class="{{ 'on' if request.endpoint=='perfil_view' }}">Perfil</a>
     </nav>
     <a class="logout" href="{{ url_for('logout') }}">Sair</a>
@@ -71,10 +69,8 @@
     <a href="{{ url_for('trainings_view') }}" class="{{ 'on' if request.endpoint=='trainings_view' }}">Treinos</a>
     <div class="sheet-group">ITF</div>
     <a href="{{ url_for('torneios_view') }}" class="{{ 'on' if request.endpoint in ['torneios_view','torneio_detalhe'] }}">Torneios ITF</a>
-    <a href="{{ url_for('ranking_view') }}" class="{{ 'on' if request.endpoint in ['ranking_view'] }}">Ranking ITF</a>
     <div class="sheet-group">FPT</div>
     <a href="{{ url_for('fpt_torneios_view') }}" class="{{ 'on' if request.endpoint in ['fpt_torneios_view'] }}">Torneios FPT</a>
-    <a href="{{ url_for('fpt_ranking_view') }}" class="{{ 'on' if request.endpoint in ['fpt_ranking_view','fpt_ranking_atualizar'] }}">Ranking FPT</a>
     <div class="sheet-group">Conta</div>
     <a href="{{ url_for('perfil_view') }}" class="{{ 'on' if request.endpoint=='perfil_view' }}">Perfil</a>
     <a href="{{ url_for('logout') }}">Sair</a>
